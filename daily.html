@@ -945,7 +945,7 @@ function generateArchivePDF() {
 }
 
 async function makePDF(orderList, dateStr) {
-  if (typeof jspdf === 'undefined') {
+  if (typeof html2canvas === 'undefined' || typeof jspdf === 'undefined') {
     return toast('PDF kitabxanası yüklənməyib. Səhifəni yeniləyin.', 'error');
   }
 
@@ -964,46 +964,53 @@ async function makePDF(orderList, dateStr) {
     var now = new Date();
     var timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
 
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
-
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-    const margin = 15;
-    const contentWidth = pageWidth - 2 * margin;
-
-    // Colors
-    const C = {
-      primary: [245, 166, 35],
-      dark: [28, 31, 42],
-      gray: [153, 153, 153],
-      lightBg: [250, 251, 252],
-      border: [229, 229, 229],
-      white: [255, 255, 255],
-      pink: [255, 107, 157],
-      green: [61, 220, 151],
-    };
-
-    var pageNum = 1;
-
-    function addFooter() {
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7);
-      doc.setTextColor(C.gray[0], C.gray[1], C.gray[2]);
-      doc.text("BEER'O — Gündəlik Hesabat — " + dateStr + " | Səhifə " + pageNum, pageWidth / 2, pageHeight - 10, { align: 'center' });
-      pageNum++;
-    }
-
-    function checkPageBreak(needed) {
-      if (yPos + needed > pageHeight - 14) {
-        addFooter();
-        doc.addPage();
-        yPos = margin;
+    // Build HTML for all orders
+    var ordersHtml = '';
+    for (var oi2 = 0; oi2 < orderList.length; oi2++) {
+      var o2 = orderList[oi2];
+      var keys = o2.items ? Object.keys(o2.items) : [];
+      var rows = '';
+      for (var ki = 0; ki < keys.length; ki++) {
+        var it = o2.items[keys[ki]];
+        var ttl = (it.title || '').replace(/[&<>]/g, function(m) { return {'&':'&amp;','<':'&lt;','>':'&gt;'}[m]; });
+        var isEven = ki % 2 === 0;
+        rows += '<tr style="border-bottom:1px solid #edf0f5;' + (isEven ? 'background:#fafbfc;' : '') + '">' +
+          '<td style="padding:7px 12px;font-size:11px;color:#1c1f2a;line-height:1.4;">' + ttl + '</td>' +
+          '<td style="padding:7px 12px;font-size:11px;color:#555;text-align:center;">' + it.quantity + '</td>' +
+          '<td style="padding:7px 12px;font-size:11px;color:#666;text-align:right;">' + Number(it.salePrice).toFixed(2) + ' AZN</td>' +
+          '<td style="padding:7px 12px;font-size:11px;color:#1c1f2a;text-align:right;font-weight:600;">' + (it.quantity * it.salePrice).toFixed(2) + ' AZN</td></tr>';
       }
+      rows += '<tr><td colspan="3" style="padding:8px 12px;text-align:right;font-size:12px;font-weight:700;color:#1c1f2a;border-top:2px solid #e8edf4;">Yekun:</td>' +
+        '<td style="padding:8px 12px;text-align:right;font-size:12px;font-weight:800;color:#f5a623;border-top:2px solid #e8edf4;">' + Number(o2.total || 0).toFixed(2) + ' AZN</td></tr>';
+
+      ordersHtml += '<div style="margin-bottom:22px;">' +
+        '<div style="font-size:14px;font-weight:700;color:#1c1f2a;margin-bottom:5px;padding-bottom:5px;border-bottom:2px solid #f5a623;">' + (o2.orderNumber || 'Sifariş ' + (oi2+1)) + '</div>' +
+        '<table style="width:100%;border-collapse:collapse;">' +
+        '<thead><tr style="background:linear-gradient(135deg,#f5a623,#e08a1e);color:#fff;">' +
+        '<th style="padding:7px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Məhsul</th>' +
+        '<th style="padding:7px 12px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Say</th>' +
+        '<th style="padding:7px 12px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Vahid qiymət</th>' +
+        '<th style="padding:7px 12px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Yekun</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
     }
 
-    // ===== LOGO =====
-    var yPos = margin;
+    // Build payment summary HTML
+    var summaryHtml =
+      '<div style="margin-top:22px;border:1px solid #e8edf4;border-radius:10px;overflow:hidden;background:#ffffff;box-shadow:0 2px 8px rgba(0,0,0,0.04);">' +
+      '<div style="background:linear-gradient(135deg,#f5a623,#e08a1e);padding:12px 24px;text-align:center;">' +
+      '<div style="font-size:12px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:2.5px;">Ödəniş Hesabatı</div></div>' +
+      '<table style="width:100%;border-collapse:collapse;font-size:11px;">' +
+      '<tr><td style="padding:12px 24px;color:#555;border-bottom:1px solid #edf0f5;">Kart ilə ödənilən ümumi məbləğ</td>' +
+      '<td style="padding:12px 24px;text-align:right;font-weight:700;color:#f5a623;border-bottom:1px solid #edf0f5;">' + cardTotal.toFixed(2) + ' AZN</td></tr>' +
+      '<tr><td style="padding:12px 24px;color:#555;border-bottom:1px solid #edf0f5;">Nağd ilə ödənilən ümumi məbləğ</td>' +
+      '<td style="padding:12px 24px;text-align:right;font-weight:700;color:#f5a623;border-bottom:1px solid #edf0f5;">' + cashTotal.toFixed(2) + ' AZN</td></tr>' +
+      '<tr><td style="padding:12px 24px;color:#555;border-bottom:1px solid #edf0f5;">Çayvoy (bəxşiş)</td>' +
+      '<td style="padding:12px 24px;text-align:right;font-weight:700;color:#ff6b9d;border-bottom:1px solid #edf0f5;">' + pdfTip.toFixed(2) + ' AZN</td></tr>' +
+      '<tr><td style="padding:14px 24px 12px;font-weight:700;color:#1c1f2a;font-size:13px;border-top:2px solid #f5a623;">Ümumi dövriyyə (Kart + Nağd)</td>' +
+      '<td style="padding:14px 24px 12px;text-align:right;font-weight:800;color:#3ddc97;font-size:15px;border-top:2px solid #f5a623;">' + grandTotal.toFixed(2) + ' AZN</td></tr></table></div>' +
+      '<div style="text-align:center;margin-top:18px;padding-top:10px;border-top:1px solid #e8edf4;font-size:9px;color:#aaa;">BEER\'O — Gündəlik Hesabat — ' + dateStr + ' | ' + timeStr + '</div>';
+
+    // Get logo as data URL
+    var logoSrc = 'beero-profile.jpg';
     var logoImg = document.getElementById('profile-img');
     if (logoImg && logoImg.complete && logoImg.naturalWidth > 0) {
       try {
@@ -1011,164 +1018,82 @@ async function makePDF(orderList, dateStr) {
         c.width = logoImg.naturalWidth;
         c.height = logoImg.naturalHeight;
         c.getContext('2d').drawImage(logoImg, 0, 0);
-        var logoSrc = c.toDataURL('image/jpeg', 0.9);
-        doc.addImage(logoSrc, 'JPEG', pageWidth / 2 - 8, yPos, 16, 16);
-        yPos += 20;
-      } catch (e) {}
+        logoSrc = c.toDataURL('image/jpeg', 0.95);
+      } catch(e) {}
     }
 
-    // ===== HEADER =====
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(22);
-    doc.setTextColor(C.dark[0], C.dark[1], C.dark[2]);
-    doc.text("BEER'O", pageWidth / 2, yPos, { align: 'center' });
-    yPos += 7;
+    // Full HTML with modern, clean design
+    var html = '<div style="padding:35px 30px;font-family:Helvetica,Arial,sans-serif;background:#ffffff;color:#1c1f2a;width:750px;">' +
+      '<div style="text-align:center;margin-bottom:24px;padding-bottom:18px;border-bottom:3px solid #f5a623;">' +
+      '<img src="' + logoSrc + '" style="width:58px;height:58px;border-radius:50%;object-fit:cover;border:3px solid #f5a623;margin:0 auto 10px;display:block;" alt="BEER\'O">' +
+      '<div style="font-size:24px;font-weight:800;color:#1c1f2a;letter-spacing:1px;margin-bottom:2px;">BEER\'O</div>' +
+      '<div style="font-size:13px;font-weight:600;color:#f5a623;margin:0;text-transform:uppercase;letter-spacing:3px;">Gündəlik Hesabat</div>' +
+      '<div style="font-size:10px;color:#999;margin-top:4px;">' + dateStr + ' | ' + timeStr + '</div></div>' +
+      ordersHtml + summaryHtml + '</div>';
 
-    doc.setFontSize(11);
-    doc.setTextColor(C.primary[0], C.primary[1], C.primary[2]);
-    doc.text('GÜNDƏLİK HESABAT', pageWidth / 2, yPos, { align: 'center' });
-    yPos += 6;
+    var wrapper = document.createElement('div');
+    wrapper.innerHTML = html;
+    wrapper.style.position = 'absolute';
+    wrapper.style.left = '0';
+    wrapper.style.top = '0';
+    wrapper.style.zIndex = '-1';
+    wrapper.style.overflow = 'visible';
+    document.body.appendChild(wrapper);
 
-    doc.setFontSize(9);
-    doc.setTextColor(C.gray[0], C.gray[1], C.gray[2]);
-    doc.text(dateStr + ' | ' + timeStr, pageWidth / 2, yPos, { align: 'center' });
-    yPos += 10;
+    toast('PDF hazirlanir...');
 
-    // Separator line
-    doc.setDrawColor(C.primary[0], C.primary[1], C.primary[2]);
-    doc.setLineWidth(0.8);
-    doc.line(margin, yPos, pageWidth - margin, yPos);
-    yPos += 10;
+    // Render with high quality
+    html2canvas(wrapper, {
+      scale: 3,
+      useCORS: true,
+      logging: false,
+      width: 750,
+      windowWidth: 750,
+      backgroundColor: '#ffffff'
+    }).then(function(canvas) {
+      try { document.body.removeChild(wrapper); } catch(e) {}
 
-    // ===== TABLE COLUMNS =====
-    var colX = {
-      product: margin,
-      qty: margin + contentWidth * 0.48,
-      price: margin + contentWidth * 0.62,
-      total: margin + contentWidth * 0.82
-    };
-    var rowH = 6;
+      var imgData = canvas.toDataURL('image/jpeg', 0.97);
+      var pdf = new jspdf.jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
 
-    // ===== ORDERS =====
-    for (var oi2 = 0; oi2 < orderList.length; oi2++) {
-      var o2 = orderList[oi2];
-      var keys = o2.items ? Object.keys(o2.items) : [];
+      var pdfWidth = pdf.internal.pageSize.getWidth();
+      var pdfHeight = pdf.internal.pageSize.getHeight();
+      var margin = 7;
+      var usableWidth = pdfWidth - 2 * margin;
+      var usableHeight = pdfHeight - 2 * margin;
 
-      checkPageBreak(20);
+      var imgWidth = usableWidth;
+      var imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-      // Order header
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(11);
-      doc.setTextColor(C.dark[0], C.dark[1], C.dark[2]);
-      doc.text(o2.orderNumber || 'Sifariş ' + (oi2 + 1), margin, yPos);
-      yPos += 5;
+      if (imgHeight <= usableHeight) {
+        pdf.addImage(imgData, 'JPEG', margin, margin, imgWidth, imgHeight);
+      } else {
+        var pageH = usableHeight;
+        var srcTotalH = canvas.height;
+        var srcPageH = (pageH * canvas.width) / imgWidth;
+        var numPages = Math.ceil(srcTotalH / srcPageH);
 
-      // Table header row
-      doc.setFillColor(C.primary[0], C.primary[1], C.primary[2]);
-      doc.rect(margin, yPos, contentWidth, rowH, 'F');
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7);
-      doc.setTextColor(255, 255, 255);
-      doc.text('Məhsul', colX.product + 2, yPos + 4);
-      doc.text('Say', colX.qty + 1, yPos + 4);
-      doc.text('Vahid qiymət', colX.price, yPos + 4, { align: 'right' });
-      doc.text('Yekun', colX.total, yPos + 4, { align: 'right' });
-      yPos += rowH;
-
-      // Table rows
-      for (var ki = 0; ki < keys.length; ki++) {
-        checkPageBreak(rowH + 2);
-
-        var it = o2.items[keys[ki]];
-        var title = it.title || '';
-        var qty = it.quantity || 0;
-        var price = Number(it.salePrice || 0);
-        var subtotal = qty * price;
-
-        // Truncate long titles
-        if (title.length > 35) title = title.substring(0, 32) + '...';
-
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
-        doc.setTextColor(C.dark[0], C.dark[1], C.dark[2]);
-        doc.text(title, colX.product + 2, yPos + 4);
-        doc.text(String(qty), colX.qty + 1, yPos + 4);
-        doc.text(price.toFixed(2) + ' AZN', colX.price, yPos + 4, { align: 'right' });
-        doc.setFont('helvetica', 'bold');
-        doc.text(subtotal.toFixed(2) + ' AZN', colX.total, yPos + 4, { align: 'right' });
-        yPos += rowH;
+        for (var p = 0; p < numPages; p++) {
+          if (p > 0) pdf.addPage();
+          var srcY = p * srcPageH;
+          var srcH = Math.min(srcPageH, srcTotalH - srcY);
+          var pageCanvas = document.createElement('canvas');
+          pageCanvas.width = canvas.width;
+          pageCanvas.height = srcH;
+          pageCanvas.getContext('2d').drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH);
+          var pageImgData = pageCanvas.toDataURL('image/jpeg', 0.97);
+          var pageImgH = (srcH * imgWidth) / canvas.width;
+          pdf.addImage(pageImgData, 'JPEG', margin, margin, imgWidth, pageImgH);
+        }
       }
 
-      // Order total row
-      checkPageBreak(rowH + 2);
-      doc.setDrawColor(C.border[0], C.border[1], C.border[2]);
-      doc.line(colX.product, yPos, margin + contentWidth, yPos);
-      yPos += 3;
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9);
-      doc.setTextColor(C.dark[0], C.dark[1], C.dark[2]);
-      doc.text('Yekun:', colX.price, yPos + 3, { align: 'right' });
-      doc.setTextColor(C.primary[0], C.primary[1], C.primary[2]);
-      doc.text(Number(o2.total || 0).toFixed(2) + ' AZN', colX.total, yPos + 3, { align: 'right' });
-      yPos += 10;
-    }
-
-    // ===== PAYMENT SUMMARY =====
-    checkPageBreak(60);
-
-    // Separator before summary
-    doc.setDrawColor(C.primary[0], C.primary[1], C.primary[2]);
-    doc.setLineWidth(0.8);
-    doc.line(margin, yPos, pageWidth - margin, yPos);
-    yPos += 8;
-
-    // Summary box background
-    doc.setFillColor(C.lightBg[0], C.lightBg[1], C.lightBg[2]);
-    doc.setDrawColor(C.border[0], C.border[1], C.border[2]);
-    doc.roundedRect(margin, yPos, contentWidth, 58, 3, 3, 'FD');
-
-    // Summary header
-    doc.setFillColor(C.primary[0], C.primary[1], C.primary[2]);
-    doc.roundedRect(margin, yPos, contentWidth, 8, 3, 3, 'F');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.setTextColor(255, 255, 255);
-    doc.text('ÖDƏNİŞ HESABATI', pageWidth / 2, yPos + 5.5, { align: 'center' });
-    yPos += 14;
-
-    // Summary rows
-    var labelX = margin + 8;
-    var valueX = pageWidth - margin - 8;
-    var rowSpacing = 9;
-
-    function addSummaryRow(label, value, color, isBold) {
-      doc.setFont('helvetica', isBold ? 'bold' : 'normal');
-      doc.setFontSize(isBold ? 10 : 9);
-      doc.setTextColor(C.dark[0], C.dark[1], C.dark[2]);
-      doc.text(label, labelX, yPos);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(color[0], color[1], color[2]);
-      doc.text(value, valueX, yPos, { align: 'right' });
-      yPos += rowSpacing;
-    }
-
-    addSummaryRow('Kart ilə ödənilən ümumi məbləğ', cardTotal.toFixed(2) + ' AZN', C.primary);
-    addSummaryRow('Nağd ilə ödənilən ümumi məbləğ', cashTotal.toFixed(2) + ' AZN', C.primary);
-    addSummaryRow('Çayvoy (bəxşiş)', pdfTip.toFixed(2) + ' AZN', C.pink);
-
-    // Separator line before grand total
-    doc.setDrawColor(C.primary[0], C.primary[1], C.primary[2]);
-    doc.setLineWidth(0.5);
-    doc.line(labelX, yPos - 2, valueX, yPos - 2);
-
-    addSummaryRow('Ümumi dövriyyə (Kart + Nağd)', grandTotal.toFixed(2) + ' AZN', C.green, true);
-
-    // ===== FOOTER on final page =====
-    addFooter();
-
-    doc.save('BEERO_Gundelik_Hesabat_' + dateStr + '.pdf');
-    toast('PDF yaradildi!');
-
+      pdf.save('BEERO_Gundelik_Hesabat_' + dateStr + '.pdf');
+      toast('PDF yaradildi!');
+    }).catch(function(err) {
+      try { document.body.removeChild(wrapper); } catch(e) {}
+      toast('PDF xetasi', 'error');
+      console.error('PDF Error:', err);
+    });
   } catch (err) {
     toast('PDF xetasi: ' + (err.message || err), 'error');
     console.error('PDF Error:', err);

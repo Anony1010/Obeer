@@ -974,40 +974,40 @@ async function makePDF(orderList, dateStr) {
         var it = o2.items[keys[ki]];
         var ttl = (it.title || '').replace(/[&<>]/g, function(m) { return {'&':'&amp;','<':'&lt;','>':'&gt;'}[m]; });
         var isEven = ki % 2 === 0;
-        rows += '<tr style="border-bottom:1px solid #edf0f5;' + (isEven ? 'background:#fafbfc;' : '') + '">' +
-          '<td style="padding:7px 12px;font-size:11px;color:#1c1f2a;line-height:1.4;">' + ttl + '</td>' +
-          '<td style="padding:7px 12px;font-size:11px;color:#555;text-align:center;">' + it.quantity + '</td>' +
-          '<td style="padding:7px 12px;font-size:11px;color:#666;text-align:right;">' + Number(it.salePrice).toFixed(2) + ' AZN</td>' +
-          '<td style="padding:7px 12px;font-size:11px;color:#1c1f2a;text-align:right;font-weight:600;">' + (it.quantity * it.salePrice).toFixed(2) + ' AZN</td></tr>';
+        rows += '<tr style="border-bottom:1px solid #e4e9f0;' + (isEven ? 'background:#f6f8fa;' : '') + '">' +
+          '<td style="padding:10px 14px;font-size:12px;color:#1a1d26;line-height:1.5;">' + ttl + '</td>' +
+          '<td style="padding:10px 14px;font-size:12px;color:#4a4f5e;text-align:center;font-weight:500;">' + it.quantity + '</td>' +
+          '<td style="padding:10px 14px;font-size:12px;color:#4a4f5e;text-align:right;">' + Number(it.salePrice).toFixed(2) + ' AZN</td>' +
+          '<td style="padding:10px 14px;font-size:13px;color:#1a1d26;text-align:right;font-weight:700;">' + (it.quantity * it.salePrice).toFixed(2) + ' AZN</td></tr>';
       }
-      rows += '<tr><td colspan="3" style="padding:8px 12px;text-align:right;font-size:12px;font-weight:700;color:#1c1f2a;border-top:2px solid #e8edf4;">Yekun:</td>' +
-        '<td style="padding:8px 12px;text-align:right;font-size:12px;font-weight:800;color:#f5a623;border-top:2px solid #e8edf4;">' + Number(o2.total || 0).toFixed(2) + ' AZN</td></tr>';
+      rows += '<tr><td colspan="3" style="padding:10px 14px;text-align:right;font-size:13px;font-weight:700;color:#1a1d26;border-top:2px solid #dce0e8;">Yekun:</td>' +
+        '<td style="padding:10px 14px;text-align:right;font-size:14px;font-weight:800;color:#e08a1e;border-top:2px solid #dce0e8;">' + Number(o2.total || 0).toFixed(2) + ' AZN</td></tr>';
 
-      ordersHtml += '<div style="margin-bottom:22px;">' +
-        '<div style="font-size:14px;font-weight:700;color:#1c1f2a;margin-bottom:5px;padding-bottom:5px;border-bottom:2px solid #f5a623;">' + (o2.orderNumber || 'Sifariş ' + (oi2+1)) + '</div>' +
+      ordersHtml += '<div style="margin-bottom:28px;">' +
+        '<div style="font-size:15px;font-weight:700;color:#1a1d26;margin-bottom:8px;padding-bottom:6px;border-bottom:2px solid #e08a1e;">' + (o2.orderNumber || 'Sifariş ' + (oi2+1)) + '</div>' +
         '<table style="width:100%;border-collapse:collapse;">' +
-        '<thead><tr style="background:linear-gradient(135deg,#f5a623,#e08a1e);color:#fff;">' +
-        '<th style="padding:7px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Məhsul</th>' +
-        '<th style="padding:7px 12px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Say</th>' +
-        '<th style="padding:7px 12px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Vahid qiymət</th>' +
-        '<th style="padding:7px 12px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Yekun</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+        '<thead><tr style="background:linear-gradient(135deg,#e08a1e,#f5a623);color:#fff;">' +
+        '<th style="padding:9px 14px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;">Məhsul</th>' +
+        '<th style="padding:9px 14px;text-align:center;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;">Say</th>' +
+        '<th style="padding:9px 14px;text-align:right;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;">Vahid qiymət</th>' +
+        '<th style="padding:9px 14px;text-align:right;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;">Yekun</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
     }
 
     // Build payment summary HTML
     var summaryHtml =
-      '<div style="margin-top:22px;border:1px solid #e8edf4;border-radius:10px;overflow:hidden;background:#ffffff;box-shadow:0 2px 8px rgba(0,0,0,0.04);">' +
-      '<div style="background:linear-gradient(135deg,#f5a623,#e08a1e);padding:12px 24px;text-align:center;">' +
-      '<div style="font-size:12px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:2.5px;">Ödəniş Hesabatı</div></div>' +
-      '<table style="width:100%;border-collapse:collapse;font-size:11px;">' +
-      '<tr><td style="padding:12px 24px;color:#555;border-bottom:1px solid #edf0f5;">Kart ilə ödənilən ümumi məbləğ</td>' +
-      '<td style="padding:12px 24px;text-align:right;font-weight:700;color:#f5a623;border-bottom:1px solid #edf0f5;">' + cardTotal.toFixed(2) + ' AZN</td></tr>' +
-      '<tr><td style="padding:12px 24px;color:#555;border-bottom:1px solid #edf0f5;">Nağd ilə ödənilən ümumi məbləğ</td>' +
-      '<td style="padding:12px 24px;text-align:right;font-weight:700;color:#f5a623;border-bottom:1px solid #edf0f5;">' + cashTotal.toFixed(2) + ' AZN</td></tr>' +
-      '<tr><td style="padding:12px 24px;color:#555;border-bottom:1px solid #edf0f5;">Çayvoy (bəxşiş)</td>' +
-      '<td style="padding:12px 24px;text-align:right;font-weight:700;color:#ff6b9d;border-bottom:1px solid #edf0f5;">' + pdfTip.toFixed(2) + ' AZN</td></tr>' +
-      '<tr><td style="padding:14px 24px 12px;font-weight:700;color:#1c1f2a;font-size:13px;border-top:2px solid #f5a623;">Ümumi dövriyyə (Kart + Nağd)</td>' +
-      '<td style="padding:14px 24px 12px;text-align:right;font-weight:800;color:#3ddc97;font-size:15px;border-top:2px solid #f5a623;">' + grandTotal.toFixed(2) + ' AZN</td></tr></table></div>' +
-      '<div style="text-align:center;margin-top:18px;padding-top:10px;border-top:1px solid #e8edf4;font-size:9px;color:#aaa;">BEER\'O — Gündəlik Hesabat — ' + dateStr + ' | ' + timeStr + '</div>';
+      '<div style="margin-top:28px;border:1px solid #e4e9f0;border-radius:12px;overflow:hidden;background:#ffffff;box-shadow:0 4px 16px rgba(0,0,0,0.06);">' +
+      '<div style="background:linear-gradient(135deg,#e08a1e,#f5a623);padding:14px 28px;text-align:center;">' +
+      '<div style="font-size:14px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:3px;">Ödəniş Hesabatı</div></div>' +
+      '<table style="width:100%;border-collapse:collapse;font-size:13px;">' +
+      '<tr><td style="padding:14px 28px;color:#3a3f4e;border-bottom:1px solid #e4e9f0;font-weight:500;">💳 Kart ilə ödənilən ümumi məbləğ</td>' +
+      '<td style="padding:14px 28px;text-align:right;font-weight:700;color:#e08a1e;border-bottom:1px solid #e4e9f0;font-size:14px;">' + cardTotal.toFixed(2) + ' AZN</td></tr>' +
+      '<tr><td style="padding:14px 28px;color:#3a3f4e;border-bottom:1px solid #e4e9f0;font-weight:500;">💵 Nağd ilə ödənilən ümumi məbləğ</td>' +
+      '<td style="padding:14px 28px;text-align:right;font-weight:700;color:#e08a1e;border-bottom:1px solid #e4e9f0;font-size:14px;">' + cashTotal.toFixed(2) + ' AZN</td></tr>' +
+      '<tr><td style="padding:14px 28px;color:#3a3f4e;border-bottom:1px solid #e4e9f0;font-weight:500;">☕ Çayvoy (bəxşiş)</td>' +
+      '<td style="padding:14px 28px;text-align:right;font-weight:700;color:#e8597a;border-bottom:1px solid #e4e9f0;font-size:14px;">' + pdfTip.toFixed(2) + ' AZN</td></tr>' +
+      '<tr><td style="padding:16px 28px 14px;font-weight:700;color:#1a1d26;font-size:15px;border-top:3px solid #e08a1e;">📊 Ümumi dövriyyə (Kart + Nağd)</td>' +
+      '<td style="padding:16px 28px 14px;text-align:right;font-weight:800;color:#22b485;font-size:17px;border-top:3px solid #e08a1e;">' + grandTotal.toFixed(2) + ' AZN</td></tr></table></div>' +
+      '<div style="text-align:center;margin-top:20px;padding-top:12px;border-top:1px solid #e4e9f0;font-size:10px;color:#9aa0b1;">BEER\'O — Gündəlik Hesabat — ' + dateStr + ' | ' + timeStr + '</div>';
 
     // Get logo as data URL
     var logoSrc = 'beero-profile.jpg';
@@ -1022,13 +1022,13 @@ async function makePDF(orderList, dateStr) {
       } catch(e) {}
     }
 
-    // Full HTML with modern, clean design
-    var html = '<div style="padding:35px 30px;font-family:Helvetica,Arial,sans-serif;background:#ffffff;color:#1c1f2a;width:750px;">' +
-      '<div style="text-align:center;margin-bottom:24px;padding-bottom:18px;border-bottom:3px solid #f5a623;">' +
-      '<img src="' + logoSrc + '" style="width:58px;height:58px;border-radius:50%;object-fit:cover;border:3px solid #f5a623;margin:0 auto 10px;display:block;" alt="BEER\'O">' +
-      '<div style="font-size:24px;font-weight:800;color:#1c1f2a;letter-spacing:1px;margin-bottom:2px;">BEER\'O</div>' +
-      '<div style="font-size:13px;font-weight:600;color:#f5a623;margin:0;text-transform:uppercase;letter-spacing:3px;">Gündəlik Hesabat</div>' +
-      '<div style="font-size:10px;color:#999;margin-top:4px;">' + dateStr + ' | ' + timeStr + '</div></div>' +
+    // Full HTML with spacious, clean design
+    var html = '<div style="padding:40px 35px;font-family:Helvetica,Arial,sans-serif;background:#ffffff;color:#1a1d26;width:770px;">' +
+      '<div style="text-align:center;margin-bottom:28px;padding-bottom:20px;border-bottom:3px solid #e08a1e;">' +
+      '<img src="' + logoSrc + '" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:3px solid #e08a1e;margin:0 auto 12px;display:block;" alt="BEER\'O">' +
+      '<div style="font-size:26px;font-weight:800;color:#1a1d26;letter-spacing:1px;margin-bottom:4px;">BEER\'O</div>' +
+      '<div style="font-size:14px;font-weight:600;color:#e08a1e;margin:0;text-transform:uppercase;letter-spacing:3.5px;">Gündəlik Hesabat</div>' +
+      '<div style="font-size:11px;color:#9aa0b1;margin-top:6px;">' + dateStr + ' | ' + timeStr + '</div></div>' +
       ordersHtml + summaryHtml + '</div>';
 
     var wrapper = document.createElement('div');
@@ -1047,18 +1047,18 @@ async function makePDF(orderList, dateStr) {
       scale: 3,
       useCORS: true,
       logging: false,
-      width: 750,
-      windowWidth: 750,
+      width: 770,
+      windowWidth: 770,
       backgroundColor: '#ffffff'
     }).then(function(canvas) {
       try { document.body.removeChild(wrapper); } catch(e) {}
 
-      var imgData = canvas.toDataURL('image/jpeg', 0.97);
+      var imgData = canvas.toDataURL('image/jpeg', 0.98);
       var pdf = new jspdf.jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
 
       var pdfWidth = pdf.internal.pageSize.getWidth();
       var pdfHeight = pdf.internal.pageSize.getHeight();
-      var margin = 7;
+      var margin = 6;
       var usableWidth = pdfWidth - 2 * margin;
       var usableHeight = pdfHeight - 2 * margin;
 
@@ -1081,7 +1081,7 @@ async function makePDF(orderList, dateStr) {
           pageCanvas.width = canvas.width;
           pageCanvas.height = srcH;
           pageCanvas.getContext('2d').drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH);
-          var pageImgData = pageCanvas.toDataURL('image/jpeg', 0.97);
+          var pageImgData = pageCanvas.toDataURL('image/jpeg', 0.98);
           var pageImgH = (srcH * imgWidth) / canvas.width;
           pdf.addImage(pageImgData, 'JPEG', margin, margin, imgWidth, pageImgH);
         }
@@ -1098,8 +1098,7 @@ async function makePDF(orderList, dateStr) {
     toast('PDF xetasi: ' + (err.message || err), 'error');
     console.error('PDF Error:', err);
   }
-}
-/* ============ INIT ============ */
+}/* ============ INIT ============ */
 document.addEventListener('DOMContentLoaded', () => {
   const yearEl = $('year');
   if (yearEl) yearEl.textContent = new Date().getFullYear();

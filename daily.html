@@ -992,8 +992,8 @@ async function makePDF(orderList, dateStr) {
         '<div style="font-size:9px;color:#9aa0b1;margin-top:3px;">' + dateStr + ' | ' + timeStr + '</div></div>';
     }
 
-    function footerHTML(pg, totalPg) {
-      return '<div style="text-align:center;padding-top:8px;border-top:1px solid #e4e9f0;font-size:8px;color:#9aa0b1;">BEER\'O — Gündəlik Hesabat — ' + dateStr + ' | Səhifə ' + pg + ' / ' + totalPg + '</div>';
+    function footerHTML() {
+      return '<div style="text-align:center;padding-top:6px;font-size:8px;color:#9aa0b1;">BEER\'O — Gündəlik Hesabat</div>';
     }
 
     function orderHTML(o2, idx) {
@@ -1046,7 +1046,7 @@ async function makePDF(orderList, dateStr) {
     mDiv.innerHTML = '<div style="padding:' + PAD_TOP + 'px ' + PAD + 'px 0;">' + headerHTML() + '</div>';
     headerH = mDiv.scrollHeight;
 
-    mDiv.innerHTML = '<div style="padding:0 ' + PAD + 'px;">' + footerHTML(1, 1) + '</div>';
+    mDiv.innerHTML = '<div style="padding:0 ' + PAD + 'px;">' + footerHTML() + '</div>';
     footerH = mDiv.scrollHeight;
 
     mDiv.innerHTML = '<div style="padding:0 ' + PAD + 'px;">' + summaryHTML() + '</div>';
@@ -1114,7 +1114,7 @@ async function makePDF(orderList, dateStr) {
       if (putSummary) bodyHTML += summaryHTML();
 
       var pageHTML = '<div style="padding:' + PAD_TOP + 'px ' + PAD + 'px ' + PAD_BOT + 'px;font-family:Helvetica,Arial,sans-serif;background:#fff;color:#1a1d26;width:' + W + 'px;">' +
-        (hasHeader ? headerHTML() : '') + bodyHTML + (isAbsoluteLast ? footerHTML(pg + 1, totalPages) : '') + '</div>';
+        (hasHeader ? headerHTML() : '') + bodyHTML + (isAbsoluteLast ? footerHTML() : '') + '</div>';
 
       var wr = document.createElement('div');
       wr.innerHTML = pageHTML;
@@ -1139,7 +1139,7 @@ async function makePDF(orderList, dateStr) {
     // Summary on its own page if needed
     if (!summaryFitsOnLast) {
       var sumHTML = '<div style="padding:' + PAD_TOP + 'px ' + PAD + 'px ' + PAD_BOT + 'px;font-family:Helvetica,Arial,sans-serif;background:#fff;color:#1a1d26;width:' + W + 'px;">' +
-        (pages.length === 0 ? headerHTML() : '') + summaryHTML() + footerHTML(totalPages, totalPages) + '</div>';
+        (pages.length === 0 ? headerHTML() : '') + summaryHTML() + footerHTML() + '</div>';
 
       var swr = document.createElement('div');
       swr.innerHTML = sumHTML;

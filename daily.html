@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="az" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BEER'O — Gündəlik Panel</title>
+<meta name="description" content="BEER'O — gündəlik sifarişlərin idarə edilməsi.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+/* ============ Daily panel — page-specific components ============ */
+.daily-header{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px; margin-bottom:22px; }
+.daily-header h2{ font-family:var(--font-display); font-size:21px; font-weight:700; background:linear-gradient(135deg,var(--primary-2),var(--primary-strong)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; margin-bottom:6px; }
+.daily-date-badge{ display:inline-flex; align-items:center; gap:8px; font-size:12.5px; font-weight:600; color:var(--text-secondary); background:var(--surface); border:1px solid var(--border); padding:6px 14px; border-radius:var(--r-full); }
+
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:12px 20px; border-radius:var(--r-sm); border:none; font-weight:600; font-size:13.5px; cursor:pointer; transition:transform var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease), background var(--t-fast) var(--ease); font-family:inherit; }
+.btn .ic svg{ width:16px; height:16px; }
+.btn-primary{ background:linear-gradient(135deg,var(--primary-2),var(--primary)); color:var(--on-primary); box-shadow:0 4px 14px hsl(var(--brand-h) 88% 54% / .25); }
+.btn-primary:hover{ transform:translateY(-2px); box-shadow:0 12px 28px hsl(var(--brand-h) 88% 54% / .35); }
+.btn-secondary{ background:var(--surface); border:1px solid var(--border); color:var(--text-primary); }
+.btn-secondary:hover{ background:var(--surface-hover); border-color:var(--border-strong); }
+.btn-success{ background:linear-gradient(135deg,#3fe0a5,#22b485); color:#04261a; box-shadow:0 4px 14px rgba(52,211,153,.25); }
+.btn-success:hover{ transform:translateY(-2px); box-shadow:0 12px 28px rgba(52,211,153,.35); }
+.btn-danger{ background:linear-gradient(135deg,#ff8484,#e34350); color:#2c0407; }
+.btn-danger:hover{ transform:translateY(-2px); box-shadow:0 12px 28px rgba(255,95,109,.3); }
+.btn-sm{ padding:9px 15px; font-size:12.5px; border-radius:var(--r-xs); }
+.btn-xs{ padding:6px 11px; font-size:11px; border-radius:8px; }
+.btn:active{ transform:translateY(0) scale(.98); }
+.btn:disabled{ opacity:.5; cursor:not-allowed; transform:none !important; box-shadow:none !important; }
+
+.orders-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:16px; margin-bottom:26px; }
+.order-card{ background:var(--surface); backdrop-filter:blur(18px) saturate(150%); -webkit-backdrop-filter:blur(18px) saturate(150%); border:1px solid var(--border); border-radius:var(--r-lg); padding:18px 20px; transition:transform var(--t-base) var(--ease), box-shadow var(--t-base) var(--ease), border-color var(--t-base) var(--ease); cursor:pointer; position:relative; overflow:hidden; }
+.order-card:hover{ transform:translateY(-3px); box-shadow:var(--shadow-md); border-color:hsl(var(--brand-h) 88% 54% / .3); }
+.order-card.confirmed{ border-color:rgba(52,211,153,.35); }
+.order-card.confirmed::before{ content:''; position:absolute; top:0; left:0; width:4px; height:100%; background:linear-gradient(180deg,#3fe0a5,#22b485); }
+.order-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:8px; }
+.order-number{ font-weight:700; font-size:15.5px; color:var(--text-primary); font-family:var(--font-display); }
+.order-status{ display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600; padding:4px 10px; border-radius:var(--r-full); white-space:nowrap; }
+.order-status .ic svg{ width:12px; height:12px; }
+.order-status.pending{ background:hsl(var(--brand-h) 88% 54% / .14); color:var(--primary); }
+.order-status.confirmed{ background:var(--success-bg); color:var(--success); }
+.order-total{ font-size:23px; font-weight:800; margin:8px 0; font-family:var(--font-display); }
+.order-total .currency{ font-size:13px; font-weight:600; color:var(--text-secondary); }
+.order-payment{ font-size:12px; color:var(--text-secondary); display:flex; align-items:center; gap:6px; }
+.order-payment .badge{ display:inline-flex; align-items:center; gap:4px; padding:3px 9px; border-radius:7px; font-weight:600; font-size:11px; }
+.order-payment .badge .ic svg{ width:12px; height:12px; }
+.badge.card{ background:var(--success-bg); color:var(--success); }
+.badge.cash{ background:hsl(var(--brand-h) 88% 54% / .14); color:var(--primary); }
+.order-items-preview{ font-size:12px; color:var(--text-secondary); margin-top:9px; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden; }
+
+.empty-orders{ text-align:center; padding:64px 20px; color:var(--text-secondary); grid-column:1/-1; }
+.empty-orders .icon{ width:70px; height:70px; margin:0 auto 16px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--surface); border:1px solid var(--border); color:var(--primary); }
+.empty-orders .icon .ic svg{ width:30px; height:30px; }
+.empty-orders h3{ color:var(--text-primary); font-size:17px; font-weight:600; margin-bottom:6px; font-family:var(--font-display); }
+
+/* Modal */
+.modal-overlay{ position:fixed; inset:0; background:rgba(6,7,10,.7); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); z-index:1000; display:none; align-items:center; justify-content:center; padding:20px; }
+.modal-overlay.active{ display:flex; animation:overlayIn .2s var(--ease); }
+@keyframes overlayIn{ from{ opacity:0; } to{ opacity:1; } }
+.modal{ background:var(--surface-solid); border:1px solid var(--border); border-radius:var(--r-xl); max-width:560px; width:100%; max-height:85vh; overflow-y:auto; padding:26px 28px; box-shadow:var(--shadow-lg); animation:modalIn .28s var(--ease-spring); }
+@keyframes modalIn{ from{ opacity:0; transform:scale(.94) translateY(10px); } to{ opacity:1; transform:scale(1) translateY(0); } }
+.modal-title{ font-size:18px; font-weight:700; margin-bottom:20px; color:var(--text-primary); display:flex; align-items:center; justify-content:space-between; font-family:var(--font-display); }
+.modal-close{ background:var(--surface); border:1px solid var(--border); width:32px; height:32px; border-radius:var(--r-xs); color:var(--text-secondary); cursor:pointer; padding:0; line-height:1; display:flex; align-items:center; justify-content:center; transition:all var(--t-fast) ease; }
+.modal-close:hover{ color:var(--danger); background:var(--danger-bg); border-color:transparent; }
+
+.form-group{ margin-bottom:15px; }
+.form-group label{ display:block; font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:6px; }
+.form-control{ width:100%; padding:11px 14px; border-radius:var(--r-sm); border:1px solid var(--border); background:var(--surface); color:var(--text-primary); font-size:14px; font-family:inherit; outline:none; transition:border-color var(--t-fast) ease, box-shadow var(--t-fast) ease; }
+.form-control:focus{ border-color:var(--primary); box-shadow:0 0 0 3px hsl(var(--brand-h) 88% 54% / .14); }
+.form-control::placeholder{ color:var(--text-tertiary); }
+select.form-control{ cursor:pointer; appearance:auto; background:var(--surface-solid); }
+select.form-control option{ background:var(--surface-solid); color:var(--text-primary); padding:6px 10px; }
+
+.items-list{ margin:12px 0; }
+.item-row{ display:flex; align-items:center; gap:10px; padding:11px 13px; background:var(--surface); border-radius:var(--r-sm); margin-bottom:8px; border:1px solid var(--border); transition:border-color var(--t-fast) ease; }
+.item-row:hover{ border-color:var(--border-strong); }
+.item-row .item-img{ width:40px; height:40px; border-radius:9px; object-fit:cover; flex-shrink:0; }
+.item-row .item-info{ flex:1; min-width:0; }
+.item-row .item-title{ font-size:13px; font-weight:600; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.item-row .item-details{ display:flex; gap:8px; align-items:center; font-size:12px; color:var(--text-secondary); flex-wrap:wrap; }
+.item-row .item-details input[type="number"]{ width:52px; padding:5px 6px; border-radius:7px; border:1px solid var(--border); background:var(--bg); color:var(--text-primary); font-size:12px; font-family:inherit; text-align:center; outline:none; }
+.item-row .item-subtotal{ font-weight:700; font-size:13px; color:var(--primary); white-space:nowrap; }
+.item-row .item-remove{ background:none; border:none; color:var(--text-tertiary); cursor:pointer; padding:5px; line-height:1; display:flex; border-radius:var(--r-full); transition:all var(--t-fast) ease; }
+.item-row .item-remove:hover{ color:var(--danger); background:var(--danger-bg); }
+.item-row .item-remove .ic svg{ width:15px; height:15px; }
+
+.add-item-bar{ display:flex; gap:8px; align-items:center; }
+.add-item-bar select{ flex:1; }
+.add-item-bar button{ white-space:nowrap; }
+
+.review-section{ margin-top:16px; padding-top:16px; border-top:1px solid var(--border); }
+.review-table{ width:100%; border-collapse:collapse; font-size:13px; }
+.review-table th{ text-align:left; color:var(--text-secondary); font-weight:600; font-size:11px; padding:7px 8px; border-bottom:1px solid var(--border); }
+.review-table td{ padding:9px 8px; border-bottom:1px solid var(--border); color:var(--text-primary); }
+.review-table tr:last-child td{ border-bottom:none; }
+.review-table .rt-img{ width:32px; height:32px; border-radius:8px; object-fit:cover; }
+.review-summary{ margin-top:14px; padding:15px; background:var(--surface); border-radius:var(--r-sm); border:1px solid var(--border); }
+.summary-row{ display:flex; justify-content:space-between; align-items:center; padding:5px 0; font-size:13px; color:var(--text-secondary); }
+.summary-row .badge{ display:inline-flex; align-items:center; gap:4px; }
+.summary-row.total{ font-size:18px; font-weight:800; color:var(--primary); border-top:1px solid var(--border); padding-top:10px; margin-top:6px; font-family:var(--font-display); }
+
+.pdf-section{ text-align:center; padding:26px 0 10px; border-top:1px solid var(--border); margin-top:10px; }
+
+/* Toast */
+.toast-container{ position:fixed; top:20px; right:20px; z-index:9999; display:flex; flex-direction:column; gap:8px; }
+.toast{ display:flex; align-items:center; gap:9px; padding:13px 18px; border-radius:var(--r-sm); font-size:13px; font-weight:600; background:var(--surface-solid); border:1px solid var(--border); color:var(--text-primary); box-shadow:var(--shadow-md); transform:translateX(130%); transition:transform var(--t-base) var(--ease-spring); backdrop-filter:blur(14px); }
+.toast .ic{ flex-shrink:0; color:var(--success); }
+.toast.show{ transform:translateX(0); }
+.toast.error{ border-color:rgba(251,106,106,.4); }
+.toast.error .ic{ color:var(--danger); }
+
+@media (max-width:768px){
+  .daily-header{ flex-direction:column; align-items:stretch; text-align:center; }
+  .daily-header h2{ font-size:18px; }
+  .daily-header > div:first-child{ text-align:center; }
+  .daily-header > div:last-child{ justify-content:center; }
+  .modal{ max-width:95vw; padding:18px; }
+  .item-row{ flex-wrap:wrap; gap:6px; }
+  .item-row .item-img{ width:32px; height:32px; }
+  .item-row .item-details input[type="number"]{ width:40px; }
+  .item-row .item-subtotal{ min-width:100%; text-align:right; }
+  .add-item-bar{ flex-wrap:wrap; }
+  .add-item-bar select{ min-width:100%; }
+  .review-table{ font-size:12px; }
+  .review-table td, .review-table th{ padding:6px 4px; }
+  .order-total{ font-size:19px; }
+}
+
+@media (max-width:480px){
+  .topbar{ padding:11px 12px 13px; }
+  .topbar-center{ font-size:16px; }
+  #profile-img{ width:64px; height:64px; margin-top:-8px; margin-bottom:-44px; }
+  .daily-header h2{ font-size:16px; }
+  .orders-grid{ gap:10px; }
+  .order-card{ padding:15px 15px; }
+  .order-number{ font-size:14px; }
+  .order-total{ font-size:17px; }
+  .btn{ padding:10px 16px; font-size:13px; }
+  .modal-title{ font-size:16px; }
+  .form-control{ font-size:13px; padding:9px 11px; }
+  .review-table td, .review-table th{ padding:5px 3px; }
+  .daily-date-badge{ font-size:11px; padding:5px 11px; }
+}
+
+@media (min-width:1024px){
+  .orders-grid{ grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); }
+}
+
+@media (max-width: 360px){
+  .daily-header{ flex-direction:column; align-items:stretch; text-align:center; gap:8px; }
+  .daily-header h2{ font-size:14px; }
+  .daily-header > div:last-child{ flex-direction:column; align-items:stretch; gap:6px; }
+  .daily-header > div:last-child .btn{ width:100%; justify-content:center; }
+  .orders-grid{ grid-template-columns:1fr; gap:8px; }
+  .order-card{ padding:12px 13px; }
+  .order-number{ font-size:13px; }
+  .order-total{ font-size:16px; margin:5px 0; }
+  .order-total .currency{ font-size:12px; }
+  .order-status{ font-size:10px; padding:3px 8px; }
+  .order-payment{ font-size:11px; }
+  .order-items-preview{ font-size:11px; }
+  .btn{ padding:9px 13px; font-size:12px; border-radius:var(--r-xs); }
+  .btn-sm{ padding:7px 11px; font-size:11px; }
+  .modal{ padding:14px; max-width:98vw; max-height:90vh; }
+  .modal-title{ font-size:15px; margin-bottom:14px; }
+  .form-control{ font-size:12px; padding:8px 11px; }
+  .item-row{ padding:9px 11px; gap:6px; }
+  .item-row .item-img{ width:28px; height:28px; }
+  .item-row .item-title{ font-size:12px; }
+  .item-row .item-details{ font-size:11px; }
+  .item-row .item-details input[type="number"]{ width:36px; padding:4px 5px; font-size:11px; }
+  .item-row .item-subtotal{ font-size:12px; }
+  .add-item-bar{ flex-direction:column; }
+  .add-item-bar select{ width:100%; min-width:0; }
+  .add-item-bar button{ width:100%; }
+  .review-table{ font-size:11px; }
+  .review-table td, .review-table th{ padding:4px 4px; }
+  .review-table .rt-img{ width:24px; height:24px; }
+  .review-summary{ padding:11px; }
+  .summary-row{ font-size:12px; }
+  .summary-row.total{ font-size:16px; }
+  .daily-date-badge{ font-size:10px; padding:4px 9px; }
+  .pdf-section{ padding:16px 0 6px; }
+  .pdf-section .btn{ width:100%; justify-content:center; }
+  .toast{ max-width:280px; font-size:12px; padding:11px 15px; right:10px; top:10px; }
+  .empty-orders{ padding:32px 12px; }
+  .empty-orders .icon{ width:56px; height:56px; }
+  .empty-orders h3{ font-size:15px; }
+}
+
+@media (min-width: 600px) and (max-width: 767px){
+  .orders-grid{ grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px; }
+  .modal{ max-width:80vw; }
+}
+
+@media (min-width: 769px) and (max-width: 1023px){
+  .orders-grid{ grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); }
+  .modal{ max-width:70vw; }
+}
+
+@media (min-width: 1400px){
+  .orders-grid{ grid-template-columns:repeat(auto-fill,minmax(350px,1fr)); gap:20px; }
+  .order-card{ padding:22px 26px; }
+  .order-number{ font-size:17px; }
+  .order-total{ font-size:25px; }
+  .modal{ max-width:640px; padding:30px 32px; }
+  .daily-header h2{ font-size:23px; }
+}
+
+@media (min-width: 1920px){
+  .orders-grid{ grid-template-columns:repeat(auto-fill,minmax(380px,1fr)); gap:24px; }
+  .order-card{ padding:26px 30px; }
+  .order-number{ font-size:18px; }
+  .order-total{ font-size:27px; }
+  .modal{ max-width:720px; padding:34px 38px; }
+}
+
+#daily-summary{ display:flex; flex-wrap:wrap; gap:12px; }
+#daily-summary .order-card{ flex:1; min-width:150px; cursor:default; }
+#daily-summary .order-card:hover{ transform:none; }
+@media (max-width: 480px){
+  #daily-summary .order-card{ min-width:100px; }
+  #daily-summary .order-card > div:first-child{ font-size:11px; }
+  #daily-summary .order-card > div:last-child > span:first-child{ font-size:18px; }
+}
+@media (max-width: 360px){
+  #daily-summary{ flex-direction:column; }
+  #daily-summary .order-card{ min-width:0; }
+}
+</style>
+
+</head>
+<body>
+<div class="bg-orbs" aria-hidden="true">
+  <span class="orb orb-1"></span><span class="orb orb-2"></span><span class="orb orb-3"></span>
+</div>
+
+<header class="topbar glass" role="banner">
+  <div class="topbar-inner">
+    <div class="topbar-left">
+    </div>
+    <div class="topbar-center" aria-hidden="true">BEER'O</div>
+    <div class="topbar-right">
+    </div>
+  </div>
+</header>
+<img id="profile-img" src="beero-profile.jpg" alt="BEER'O" style="display:none;" aria-hidden="true">
+
+
+<main class="container" role="main">
+  <div class="daily-header">
+    <div>
+      <h2>Gündəlik Sifarişlər</h2>
+      <div class="daily-date-badge"><span id="current-date"></span></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button id="new-order-btn" class="btn btn-primary"><span class="ic" data-icon="plus"></span>Yeni Sifariş</button>
+      <button id="tip-btn" class="btn btn-secondary"><span class="ic" data-icon="cash"></span>Çayvoy</button>
+      <button id="toggle-archived-btn" class="btn btn-secondary"><span class="ic" data-icon="archive"></span>Arxiv</button>
+    </div>
+  </div>
+
+  <div id="orders-container">
+    <div id="orders-grid" class="orders-grid">
+      <div class="empty-orders">
+        <div class="icon"><span class="ic" data-icon="inbox" data-icon-size="30"></span></div>
+        <h3>Bu gün üçün sifariş yoxdur</h3>
+        <p>Yeni sifariş yaratmaq üçün "Yeni Sifariş" düyməsinə basın.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div id="daily-summary" style="display:none;">
+    <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:20px;">
+      <div class="order-card" style="cursor:default;min-width:160px;flex:1;">
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-secondary);font-weight:600;"><span class="ic" data-icon="card" data-icon-size="14"></span>Kart</div>
+        <div style="font-size:24px;font-weight:800;color:var(--success);"><span id="card-total">0</span> <span class="currency" style="font-size:14px;">AZN</span></div>
+      </div>
+      <div class="order-card" style="cursor:default;min-width:160px;flex:1;">
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-secondary);font-weight:600;"><span class="ic" data-icon="cash" data-icon-size="14"></span>Nağd</div>
+        <div style="font-size:24px;font-weight:800;color:var(--primary);"><span id="cash-total">0</span> <span class="currency" style="font-size:14px;">AZN</span></div>
+      </div>
+      <div class="order-card" style="cursor:default;min-width:160px;flex:1;">
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-secondary);font-weight:600;"><span class="ic" data-icon="wallet" data-icon-size="14"></span>Ümumi</div>
+        <div style="font-size:24px;font-weight:800;color:var(--text-primary);"><span id="grand-total">0</span> <span class="currency" style="font-size:14px;">AZN</span></div>
+      </div>
+      <div class="order-card" style="cursor:default;min-width:160px;flex:1;">
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-secondary);font-weight:600;"><span class="ic" data-icon="cash" data-icon-size="14"></span>Çayvoy</div>
+        <div style="font-size:24px;font-weight:800;color:#ff6b9d;"><span id="tip-total">0</span> <span class="currency" style="font-size:14px;">AZN</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PDF Export -->
+  <div id="sync-badge" class="sync-badge offline" aria-live="polite"><span class="sync-dot"></span><span id="sync-text">Bağlanır...</span></div>
+  <div class="pdf-section">
+    <button id="pdf-export-btn" class="btn btn-secondary"><span class="ic" data-icon="pdf"></span>Export To PDF</button>
+  </div>
+</main>
+
+<!-- New Order Modal -->
+<div id="order-modal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-title">
+      <span id="order-modal-title">Yeni Sifariş</span>
+      <button class="modal-close" data-close>&times;</button>
+    </div>
+    <div id="order-form">
+      <!-- Product Search -->
+      <div class="form-group">
+        <label>Məhsul axtar</label>
+        <div style="position:relative;">
+          <input type="text" id="product-search" class="form-control" placeholder="Məhsulun adını yazın..." autocomplete="off" style="font-size:13px;padding:9px 12px 9px 38px;">
+          <span class="ic" data-icon="search" data-icon-size="16" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-tertiary);pointer-events:none;"></span>
+          <div id="product-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:100;background:var(--bg-2);border:1px solid var(--glass-border);border-radius:0 0 10px 10px;max-height:180px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.4);"></div>
+        </div>
+      </div>
+
+      <!-- Selected Product + Quantity + Add -->
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;">
+        <input type="text" id="product-select-name" class="form-control" readonly placeholder="Məhsul seçilməyib" style="flex:1;font-size:13px;padding:8px 10px;">
+        <input type="number" id="item-quantity" class="form-control" value="1" min="0" step="any" style="width:65px;flex-shrink:0;font-size:13px;padding:8px 6px;text-align:center;" placeholder="Say">
+        <button id="add-item-btn" class="btn btn-primary btn-sm" style="white-space:nowrap;padding:8px 12px;"><span class="ic" data-icon="plus" data-icon-size="14"></span>Əlavə et</button>
+      </div>
+
+      <!-- Order Items List -->
+      <div id="order-items" class="items-list"></div>
+
+      <!-- Realtime Total -->
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--card-bg);border-radius:10px;margin-bottom:12px;border:1px solid var(--glass-border);">
+        <span style="font-size:13px;color:var(--text-secondary);font-weight:600;">Sifariş cəmi:</span>
+        <span style="font-size:18px;font-weight:800;color:var(--primary);"><span id="order-total-display">0.00</span> AZN</span>
+      </div>
+
+      <!-- Payment Type -->
+      <div class="form-group">
+        <label>Ödəniş növü</label>
+        <select id="payment-type" class="form-control">
+          <option value="Nağd">Nağd</option>
+          <option value="Kart">Kart</option>
+        </select>
+      </div>
+
+      <!-- Confirm / Cancel -->
+      <div style="display:flex;gap:10px;">
+        <button id="confirm-order-btn" class="btn btn-success" style="flex:1;"><span class="ic" data-icon="check-circle"></span>Təsdiq et</button>
+        <button id="cancel-order-btn" class="btn btn-secondary" data-close>Ləğv et</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Review Order Modal -->
+<div id="review-modal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-title">
+      <span>Sifarişə baxış</span>
+      <button class="modal-close" data-close>&times;</button>
+    </div>
+    <div id="review-content"></div>
+  </div>
+</div>
+
+<!-- Archived Orders Modal -->
+<div id="archived-modal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-title">
+      <span style="display:flex;align-items:center;gap:8px;"><span class="ic" data-icon="archive"></span>Arxiv</span>
+      <button class="modal-close" data-close>&times;</button>
+    </div>
+    <div id="archived-content">
+      <div class="form-group">
+        <label>Tarix seçin</label>
+        <select id="archive-date-select" class="form-control"></select>
+      </div>
+      <div id="archive-orders-container"></div>
+      <button id="archive-pdf-btn" class="btn btn-secondary" style="width:100%;margin-top:12px;"><span class="ic" data-icon="pdf"></span>Arxiv Export To PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toast-container"></div>
+
+<footer class="site-footer"><p>© <span id="year"></span> BEER'O — Gündəlik Panel</p></footer>
+
+<script src="icons.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+/* ============ FIREBASE ============ */
+const firebaseConfig = {
+  apiKey: "AIzaSyDnbN3yJfuHejYqTv5HsisJMec0QjpaJzg",
+  authDomain: "chatog-94528.firebaseapp.com",
+  databaseURL: "https://chatog-94528-default-rtdb.firebaseio.com",
+  projectId: "chatog-94528",
+  storageBucket: "chatog-94528.firebasestorage.app",
+  messagingSenderId: "877401186095",
+  appId: "1:877401186095:web:04d181fbbf2aaebb64cbda"
+};
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+const $ = id => document.getElementById(id);
+
+/* ============ CONNECTION ============ */
+let connected = false;
+db.ref('.info/connected').on('value', snap => {
+  connected = snap.val() === true;
+  const badge = $('sync-badge');
+  if (badge) {
+    badge.className = 'sync-badge ' + (connected ? 'online' : 'offline');
+    badge.querySelector('#sync-text').textContent = connected ? 'Canlı bağlantı' : 'Bağlanır...';
+  }
+  if (connected && !initialDataLoaded) {
+    loadOrders(currentDate);
+  }
+});
+
+/* ============ TOAST ============ */
+function toast(msg, type) {
+  const container = $('toast-container');
+  if (!container) return;
+  const clean = String(msg || '').replace(/^[\u2600-\u27BF\u2B00-\u2BFF\u{1F300}-\u{1FAFF}\uFE0F]+\s*/u, '');
+  const el = document.createElement('div');
+  el.className = 'toast' + (type === 'error' ? ' error' : '');
+  const iconName = type === 'error' ? 'x-circle' : 'check-circle';
+  el.innerHTML = '<span class="ic">' + (window.BeeroIcons ? window.BeeroIcons.svg(iconName, 17) : '') + '</span><span></span>';
+  el.querySelector('span:last-child').textContent = clean;
+  container.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('show'));
+  setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 400); }, 2800);
+}
+
+/* ============ STATE ============ */
+let products = [];
+let orders = [];
+let currentOrderItems = [];
+let editingOrderId = null;
+let currentDate = '';
+let initialDataLoaded = false;
+let currentTip = 0;
+
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+/* ============ PRODUCTS (realtime) ============ */
+db.ref('products').on('value', snap => {
+  const val = snap.val();
+  products = val ? Object.keys(val).map(k => ({ id: k, ...val[k] })).filter(p => p.active !== false).sort((a,b) => (a.order||0)-(b.order||0)) : [];
+  populateProductSelect();
+});
+
+function populateProductSelect() {
+  // select is no longer used — autocomplete replaces it
+}
+
+/* ============ PRODUCT SEARCH (autocomplete) ============ */
+var selectedProductId = null;
+
+function showAllProducts() {
+  const container = $('product-suggestions');
+  if (!container) return;
+  if (products.length === 0) { container.style.display = 'none'; return; }
+  container.style.display = 'block';
+  container.innerHTML = products.map(function(p) {
+    return '<div class="product-suggestion" data-pid="' + p.id + '" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--glass-border);display:flex;justify-content:space-between;align-items:center;transition:background .1s ease;">' +
+      '<span style="font-size:13px;color:var(--text-primary);">' + p.title + '</span>' +
+      '<span style="font-size:12px;color:var(--primary);font-weight:600;">' + (p.price || 0).toFixed(2) + ' AZN</span></div>';
+  }).join('');
+  attachSuggestionEvents();
+}
+
+function attachSuggestionEvents() {
+  const container = $('product-suggestions');
+  if (!container) return;
+  container.querySelectorAll('.product-suggestion').forEach(function(el) {
+    el.addEventListener('click', function() { selectProduct(this.dataset.pid); });
+    el.addEventListener('mouseenter', function() { this.style.background = 'var(--glass-bg)'; });
+    el.addEventListener('mouseleave', function() { this.style.background = ''; });
+  });
+}
+
+$('product-search').addEventListener('focus', function() {
+  if (!this.value.trim()) { showAllProducts(); }
+});
+
+$('product-search').addEventListener('input', function() {
+  const q = this.value.toLowerCase().trim();
+  selectedProductId = null;
+  $('product-select-name').value = 'Məhsul seçilməyib';
+  const container = $('product-suggestions');
+  if (!container) return;
+  if (!q) { showAllProducts(); return; }
+  const matches = products.filter(function(p) { return p.title.toLowerCase().includes(q); });
+  container.style.display = matches.length ? 'block' : 'none';
+  container.innerHTML = matches.map(function(p) {
+    return '<div class="product-suggestion" data-pid="' + p.id + '" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--glass-border);display:flex;justify-content:space-between;align-items:center;transition:background .1s ease;">' +
+      '<span style="font-size:13px;color:var(--text-primary);">' + p.title + '</span>' +
+      '<span style="font-size:12px;color:var(--primary);font-weight:600;">' + (p.price || 0).toFixed(2) + ' AZN</span></div>';
+  }).join('');
+  attachSuggestionEvents();
+});
+
+function selectProduct(pid) {
+  const prod = products.find(p => p.id === pid);
+  if (!prod) return;
+  selectedProductId = pid;
+  $('product-search').value = prod.title;
+  $('product-select-name').value = prod.title + ' — ' + (prod.price || 0).toFixed(2) + ' AZN';
+  $('product-suggestions').style.display = 'none';
+  $('product-suggestions').innerHTML = '';
+  $('item-quantity').focus();
+}
+
+// Close suggestions on click outside
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('#product-search') && !e.target.closest('#product-suggestions')) {
+    const container = $('product-suggestions');
+    if (container) container.style.display = 'none';
+  }
+});
+
+// Allow keyboard enter to select first suggestion
+$('product-search').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' || e.key === 'Tab') {
+    const container = $('product-suggestions');
+    const first = container ? container.querySelector('.product-suggestion') : null;
+    if (first && container.style.display === 'block') {
+      e.preventDefault();
+      selectProduct(first.dataset.pid);
+    }
+  }
+});
+
+/* ============ ORDERS (realtime) ============ */
+function loadOrders(dateStr) {
+  currentDate = dateStr || todayStr();
+  // Load tip
+  db.ref('daily-reports/' + currentDate + '/tip').once('value', tipSnap => {
+    currentTip = tipSnap.val() || 0;
+    updateSummary();
+  });
+  // Remove old listener if any
+  if (window._orderRef) window._orderRef.off();
+  window._orderRef = db.ref('daily-reports/' + currentDate + '/orders');
+  window._orderRef.on('value', snap => {
+    const val = snap.val();
+    orders = val ? Object.keys(val).map(k => ({ id: k, ...val[k] })).sort((a,b) => (a.createdAt||0)-(b.createdAt||0)) : [];
+    initialDataLoaded = true;
+    renderOrders();
+    updateSummary();
+  }, err => {
+    console.error('Orders load error:', err);
+    toast('Məlumat yüklənərkən xəta baş verdi', 'error');
+  });
+}
+
+/* ============ RENDER ============ */
+function renderOrders() {
+  const grid = $('orders-grid');
+  if (!grid) return;
+  if (orders.length === 0) {
+    grid.innerHTML = '<div class="empty-orders"><div class="icon">' + icon('inbox', 30) + '</div><h3>Bu gün üçün sifariş yoxdur</h3><p>Yeni sifariş yaratmaq üçün "Yeni Sifariş" düyməsinə basın.</p></div>';
+    const summary = $('daily-summary');
+    if (summary) summary.style.display = 'none';
+    return;
+  }
+  const summary = $('daily-summary');
+  if (summary) summary.style.display = '';
+  grid.innerHTML = orders.map(o => {
+    const itemsArr = o.items ? Object.values(o.items) : [];
+    const itemsText = itemsArr.map(i => `${i.title} x${i.quantity}`).join(', ');
+    return `<div class="order-card ${o.confirmed ? 'confirmed' : ''}" data-order-id="${o.id}">
+      <div class="order-header">
+        <span class="order-number">${o.orderNumber || 'Sifariş'}</span>
+        <span class="order-status ${o.confirmed ? 'confirmed' : 'pending'}">${icon(o.confirmed ? 'check-circle' : 'clock', 12)}${o.confirmed ? 'Təsdiqləndi' : 'Gözləmədə'}</span>
+      </div>
+      <div class="order-total">${(o.total ?? 0).toFixed(2)} <span class="currency">AZN</span></div>
+      <div class="order-payment">
+        Ödəniş: <span class="badge ${o.paymentType === 'Kart' ? 'card' : 'cash'}">${icon(o.paymentType === 'Kart' ? 'card' : 'cash', 12)}${o.paymentType === 'Kart' ? 'Kart' : 'Nağd'}</span>
+      </div>
+      ${itemsArr.length > 0 ? `<div class="order-items-preview">${escHtml(itemsText)}</div>` : ''}
+    </div>`;
+  }).join('');
+  grid.querySelectorAll('.order-card').forEach(card => {
+    card.addEventListener('click', () => openReview(card.dataset.orderId));
+  });
+}
+
+function escHtml(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+function icon(name, size) { return '<span class="ic">' + (window.BeeroIcons ? window.BeeroIcons.svg(name, size || 16) : '') + '</span>'; }
+
+/* ============ SUMMARY ============ */
+function updateSummary() {
+  let card = 0, cash = 0;
+  orders.filter(o => o.confirmed).forEach(o => {
+    if (o.paymentType === 'Kart') card += o.total || 0;
+    else cash += o.total || 0;
+  });
+  const cardEl = $('card-total');
+  const cashEl = $('cash-total');
+  const grandEl = $('grand-total');
+  const tipEl = $('tip-total');
+  if (cardEl) cardEl.textContent = card.toFixed(2);
+  if (cashEl) cashEl.textContent = cash.toFixed(2);
+  if (grandEl) grandEl.textContent = (card + cash).toFixed(2);
+  if (tipEl) tipEl.textContent = currentTip.toFixed(2);
+}
+
+/* ============ MODALS - CLOSE ============ */
+document.addEventListener('click', e => {
+  if (e.target.matches('[data-close]')) e.target.closest('.modal-overlay').classList.remove('active');
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+});
+
+/* ============ NEW ORDER ============ */
+$('new-order-btn').addEventListener('click', () => {
+  editingOrderId = null;
+  currentOrderItems = [];
+  $('order-modal-title').textContent = 'Yeni Sifariş';
+  $('order-items').innerHTML = '<div style="text-align:center;padding:14px;color:var(--text-secondary);font-size:13px;">Hələ məhsul əlavə edilməyib</div>';
+  $('payment-type').value = 'Nağd';
+  $('order-modal').classList.add('active');
+});
+
+$('add-item-btn').addEventListener('click', () => {
+  const pid = selectedProductId;
+  const qty = parseFloat($('item-quantity').value) || 1;
+  if (!pid) return toast('Məhsul seçin', 'error');
+  if (qty < 0.5) return toast('Say düzgün deyil', 'error');
+  const prod = products.find(p => p.id === pid);
+  if (!prod) return toast('Məhsul tapılmadı', 'error');
+  currentOrderItems.push({
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2,5),
+    productId: pid, title: prod.title, image: prod.image || '',
+    price: prod.price ?? 0, quantity: qty,
+    salePrice: prod.price ?? 0,
+    subtotal: (prod.price ?? 0) * qty
+  });
+  $('item-quantity').value = 1;
+  selectedProductId = null;
+  $('product-search').value = '';
+  $('product-select-name').value = 'Məhsul seçilməyib';
+  renderOrderItems();
+  toast('Məhsul əlavə edildi');
+});
+
+function renderOrderItems() {
+  const container = $('order-items');
+  if (!container) return;
+  if (currentOrderItems.length === 0) {
+    container.innerHTML = '<div style="text-align:center;padding:14px;color:var(--text-secondary);font-size:13px;">Hələ məhsul əlavə edilməyib</div>';
+    return;
+  }
+  container.innerHTML = currentOrderItems.map((item, idx) => `
+    <div class="item-row">
+      ${item.image ? `<img class="item-img" src="${item.image}" alt="${item.title}" onerror="this.style.display='none'">` : '<div class="item-img" style="background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--text-tertiary);">' + icon('beer', 18) + '</div>'}
+      <div class="item-info">
+        <div class="item-title">${escHtml(item.title)}</div>
+        <div class="item-details">
+          <input type="number" value="${item.quantity}" min="1" data-idx="${idx}" class="item-qty-input">
+          × ${item.salePrice} AZN
+          <input type="number" value="${item.salePrice}" min="0" step="0.1" data-idx="${idx}" class="item-price-input" style="width:62px;">
+        </div>
+      </div>
+      <div class="item-subtotal">${(item.quantity * item.salePrice).toFixed(2)} AZN</div>
+      <button class="item-remove" data-idx="${idx}">&times;</button>
+    </div>
+  `).join('');
+
+  container.querySelectorAll('.item-qty-input').forEach(inp => {
+    inp.addEventListener('input', function() {
+      const idx = parseInt(this.dataset.idx);
+      currentOrderItems[idx].quantity = parseFloat(this.value) || 0;
+      currentOrderItems[idx].subtotal = currentOrderItems[idx].quantity * currentOrderItems[idx].salePrice;
+      renderOrderItems();
+    });
+  });
+  container.querySelectorAll('.item-price-input').forEach(inp => {
+    inp.addEventListener('input', function() {
+      const idx = parseInt(this.dataset.idx);
+      currentOrderItems[idx].salePrice = parseFloat(this.value) || 0;
+      currentOrderItems[idx].subtotal = currentOrderItems[idx].quantity * currentOrderItems[idx].salePrice;
+      renderOrderItems();
+    });
+  });
+  container.querySelectorAll('.item-remove').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const idx = parseInt(this.dataset.idx);
+      currentOrderItems.splice(idx, 1);
+      renderOrderItems();
+    });
+  });
+  updateOrderTotalDisplay();
+}
+
+function updateOrderTotalDisplay() {
+  const el = $('order-total-display');
+  if (!el) return;
+  const total = currentOrderItems.reduce(function(s, i) { return s + i.quantity * i.salePrice; }, 0);
+  el.textContent = total.toFixed(2);
+}
+
+/* ============ CONFIRM ORDER ============ */
+$('confirm-order-btn').addEventListener('click', async () => {
+  if (currentOrderItems.length === 0) return toast('Heç bir məhsul əlavə edilməyib', 'error');
+  if (!connected) return toast('Bağlantı yoxdur', 'error');
+  const paymentType = $('payment-type').value;
+  const total = currentOrderItems.reduce((s, i) => s + i.quantity * i.salePrice, 0);
+  try {
+    const dateStr = currentDate || todayStr();
+    const itemsObj = {};
+    currentOrderItems.forEach((item, idx) => {
+      itemsObj['item_' + idx] = {
+        productId: item.productId, title: item.title, image: item.image || '',
+        quantity: item.quantity, salePrice: item.salePrice,
+        subtotal: item.quantity * item.salePrice
+      };
+    });
+    if (editingOrderId) {
+      // Update existing order
+      await db.ref('daily-reports/' + dateStr + '/orders/' + editingOrderId).update({
+        items: itemsObj, paymentType, total, confirmed: true
+      });
+      editingOrderId = null;
+    } else {
+      // Create new order
+      const orderRef = db.ref('daily-reports/' + dateStr + '/orders').push();
+      await orderRef.set({
+        orderNumber: 'Sifariş ' + (orders.length + 1),
+        items: itemsObj, paymentType, total, confirmed: true, createdAt: Date.now()
+      });
+    }
+    await updateDailyTotals(dateStr);
+    toast('Sifariş təsdiqləndi!');
+    $('order-modal').classList.remove('active');
+    currentOrderItems = [];
+  } catch (e) {
+    toast('Xəta: ' + e.message, 'error');
+  }
+});
+
+/* ============ CANCEL ============ */
+$('cancel-order-btn').addEventListener('click', () => {
+  editingOrderId = null;
+  $('order-modal').classList.remove('active');
+  currentOrderItems = [];
+});
+
+/* ============ TIP (Çayvoy) ============ */
+$('tip-btn').addEventListener('click', () => {
+  const val = prompt('Çayvoy məbləğini daxil edin (AZN):', currentTip > 0 ? currentTip.toString() : '');
+  if (val === null) return; // cancelled
+  const amount = parseFloat(val);
+  if (isNaN(amount) || amount < 0) return toast('Düzgün məbləğ daxil edin', 'error');
+  currentTip = amount;
+  db.ref('daily-reports/' + currentDate + '/tip').set(amount);
+  updateSummary();
+  toast('Çayvoy: ' + amount.toFixed(2) + ' AZN');
+});
+
+/* ============ REVIEW ============ */
+function openReview(orderId) {
+  const order = orders.find(o => o.id === orderId);
+  if (!order) return;
+  const itemsArr = order.items ? Object.values(order.items) : [];
+  let html = '';
+  if (itemsArr.length > 0) {
+    html += '<table class="review-table"><thead><tr><th>Şəkil</th><th>Məhsul</th><th>Say</th><th>Qiymət</th><th>Cəmi</th></tr></thead><tbody>';
+    itemsArr.forEach(item => {
+      html += `<tr>
+        <td>${item.image ? `<img class="rt-img" src="${item.image}" onerror="this.style.display='none'">` : icon('beer', 16)}</td>
+        <td>${escHtml(item.title)}</td>
+        <td>${item.quantity}</td>
+        <td>${item.salePrice} AZN</td>
+        <td>${item.subtotal} AZN</td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+  }
+  html += `<div class="review-summary">
+    <div class="summary-row"><span>Ödəniş növü</span><span class="badge ${order.paymentType === 'Kart' ? 'card' : 'cash'}">${icon(order.paymentType === 'Kart' ? 'card' : 'cash', 12)}${order.paymentType === 'Kart' ? 'Kart' : 'Nağd'}</span></div>
+    <div class="summary-row"><span>Status</span><span style="display:inline-flex;align-items:center;gap:5px;">${icon(order.confirmed ? 'check-circle' : 'clock', 14)}${order.confirmed ? 'Təsdiqləndi' : 'Gözləmədə'}</span></div>
+    <div class="summary-row total"><span>Yekun məbləğ</span><span>${(order.total || 0).toFixed(2)} AZN</span></div>
+  </div>`;
+  // Add edit button for confirmed orders
+  if (order.confirmed) {
+    html += '<div style="text-align:center;margin-top:14px;">' +
+      '<button class="btn btn-primary" id="review-edit-btn">' + icon('edit', 15) + 'Redaktə et</button></div>';
+  }
+  $('review-content').innerHTML = html;
+  $('review-modal').querySelector('.modal').dataset.reviewOrderId = orderId;
+  $('review-modal').classList.add('active');
+}
+
+/* ============ REVIEW EDIT ============ */
+document.addEventListener('click', function(e) {
+  if (e.target.id === 'review-edit-btn') {
+    const modal = e.target.closest('.modal-overlay');
+    const orderId = modal ? modal.querySelector('.modal').dataset.reviewOrderId : null;
+    if (orderId) openEditOrder(orderId);
+  }
+});
+
+function openEditOrder(orderId) {
+  const order = orders.find(o => o.id === orderId);
+  if (!order) return toast('Sifariş tapılmadı', 'error');
+
+  // Set editing state
+  editingOrderId = orderId;
+  selectedProductId = null;
+
+  // Convert order items to currentOrderItems format
+  currentOrderItems = [];
+  if (order.items) {
+    Object.values(order.items).forEach(function(item) {
+      currentOrderItems.push({
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2,5),
+        productId: item.productId,
+        title: item.title,
+        image: item.image || '',
+        price: item.salePrice || 0,
+        quantity: item.quantity,
+        salePrice: item.salePrice,
+        subtotal: item.quantity * item.salePrice
+      });
+    });
+  }
+
+  // Set payment type
+  $('payment-type').value = order.paymentType || 'Nağd';
+  $('product-search').value = '';
+  $('product-select-name').value = 'Məhsul seçilməyib';
+  updateOrderTotalDisplay();
+
+  // Close review modal, open order modal
+  $('review-modal').classList.remove('active');
+  $('order-modal-title').textContent = 'Sifarişi Redaktə et';
+  renderOrderItems();
+  $('order-modal').classList.add('active');
+}
+
+/* ============ DAILY TOTALS ============ */
+async function updateDailyTotals(dateStr) {
+  const snap = await db.ref('daily-reports/' + dateStr + '/orders').once('value');
+  const vals = snap.val();
+  let card = 0, cash = 0;
+  if (vals) {
+    Object.values(vals).forEach(o => {
+      if (!o.confirmed) return;
+      if (o.paymentType === 'Kart') card += o.total || 0;
+      else cash += o.total || 0;
+    });
+  }
+  await db.ref('daily-reports/' + dateStr).update({ cardTotal: card, cashTotal: cash, grandTotal: card + cash });
+}
+
+/* ============ ARCHIVE ============ */
+$('toggle-archived-btn').addEventListener('click', async () => {
+  $('archived-modal').classList.add('active');
+  try {
+    const snap = await db.ref('daily-reports').once('value');
+    const val = snap.val();
+    const allDates = val ? Object.keys(val).sort().reverse() : [];
+    const sel = $('archive-date-select');
+    if (!sel) return;
+    sel.innerHTML = allDates.map(d => `<option value="${d}">${d}</option>`).join('');
+    if (allDates.length > 0) {
+      loadArchiveOrders(allDates[0]);
+      sel.onchange = () => loadArchiveOrders(sel.value);
+    } else {
+      $('archive-orders-container').innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-secondary);">Arxivdə məlumat yoxdur</div>';
+    }
+  } catch (e) {
+    toast('Arxiv yüklənərkən xəta', 'error');
+  }
+});
+
+async function loadArchiveOrders(dateStr) {
+  try {
+    const snap = await db.ref('daily-reports/' + dateStr + '/orders').once('value');
+    const val = snap.val();
+    const archOrders = val ? Object.keys(val).map(k => ({ id: k, ...val[k] })).sort((a,b) => (a.createdAt||0)-(b.createdAt||0)) : [];
+    const cont = $('archive-orders-container');
+    if (!cont) return;
+    if (archOrders.length === 0) {
+      cont.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-secondary);">Bu tarixdə sifariş yoxdur</div>';
+      return;
+    }
+    let card = 0, cash = 0;
+    archOrders.filter(o => o.confirmed).forEach(o => {
+      if (o.paymentType === 'Kart') card += o.total || 0; else cash += o.total || 0;
+    });
+    cont.innerHTML = archOrders.map(o => {
+      const itemsArr = o.items ? Object.values(o.items) : [];
+      const itemsText = itemsArr.map(i => `${i.title} x${i.quantity}`).join(', ');
+      return `<div class="order-card confirmed" style="cursor:pointer;margin-bottom:8px;">
+        <div class="order-header"><span class="order-number">${o.orderNumber || 'Sifariş'}</span><span class="order-status confirmed">${icon('check-circle', 12)}Təsdiqləndi</span></div>
+        <div class="order-total">${(o.total || 0).toFixed(2)} <span class="currency">AZN</span></div>
+        <div class="order-payment">Ödəniş: <span class="badge ${o.paymentType === 'Kart' ? 'card' : 'cash'}">${icon(o.paymentType === 'Kart' ? 'card' : 'cash', 12)}${o.paymentType === 'Kart' ? 'Kart' : 'Nağd'}</span></div>
+        ${itemsArr.length > 0 ? `<div class="order-items-preview">${escHtml(itemsText)}</div>` : ''}
+      </div>`;
+    }).join('');
+    cont.innerHTML += `<div style="display:flex;gap:12px;justify-content:center;margin-top:12px;padding:12px;background:var(--surface);border-radius:12px;flex-wrap:wrap;">
+      <span style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--success);">${icon('card', 13)}Kart: ${card.toFixed(2)} AZN</span>
+      <span style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--primary);">${icon('cash', 13)}Nağd: ${cash.toFixed(2)} AZN</span>
+      <span style="display:flex;align-items:center;gap:5px;font-size:13px;font-weight:700;">${icon('wallet', 13)}Ümumi: ${(card+cash).toFixed(2)} AZN</span>
+    </div>`;
+  } catch (e) {
+    toast('Məlumat yüklənərkən xəta', 'error');
+  }
+}
+
+/* ============ PDF EXPORT ============ */
+$('pdf-export-btn').addEventListener('click', generatePDF);
+$('archive-pdf-btn').addEventListener('click', generateArchivePDF);
+
+function generatePDF() {
+  if (orders.length === 0) return toast('Heç bir sifariş yoxdur', 'error');
+  const confirmedOrders = orders.filter(o => o.confirmed);
+  if (confirmedOrders.length === 0) return toast('Təsdiqlənmiş sifariş yoxdur', 'error');
+  makePDF(confirmedOrders, currentDate);
+}
+
+function generateArchivePDF() {
+  const dateStr = $('archive-date-select').value;
+  if (!dateStr) return toast('Tarix seçin', 'error');
+  db.ref('daily-reports/' + dateStr + '/orders').once('value', snap => {
+    const val = snap.val();
+    const archOrders = val ? Object.keys(val).map(k => ({ id: k, ...val[k] })).filter(o => o.confirmed) : [];
+    if (archOrders.length === 0) return toast('Bu tarixdə təsdiqlənmiş sifariş yoxdur', 'error');
+    makePDF(archOrders, dateStr);
+  });
+}
+
+async function makePDF(orderList, dateStr) {
+  if (typeof html2canvas === 'undefined' || typeof jspdf === 'undefined') {
+    return toast('PDF kitabxanası yüklənməyib. Səhifəni yeniləyin.', 'error');
+  }
+
+  try {
+    var cardTotal = 0, cashTotal = 0, grandTotal = 0;
+    var pdfTip = 0;
+    for (var oi = 0; oi < orderList.length; oi++) {
+      var o = orderList[oi];
+      var t = o.total || 0;
+      if (o.paymentType === 'Kart') cardTotal += t; else cashTotal += t;
+      grandTotal += t;
+    }
+    // Get tip from Firebase or use current
+    var tipRef = db.ref('daily-reports/' + dateStr + '/tip');
+    try { pdfTip = (await tipRef.once('value')).val() || 0; } catch(e) {}
+
+    var now = new Date();
+    var timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+    var ordersHtml = '';
+
+    for (var oi2 = 0; oi2 < orderList.length; oi2++) {
+      var o2 = orderList[oi2];
+      var keys = o2.items ? Object.keys(o2.items) : [];
+      var rows = '';
+      for (var ki = 0; ki < keys.length; ki++) {
+        var it = o2.items[keys[ki]];
+        var ttl = (it.title || '').replace(/[&<>]/g, function(m) { return {'&':'&amp;','<':'&lt;','>':'&gt;'}[m]; });
+        rows += '<tr style="border-bottom:1px solid #e0e0e0;">' +
+          '<td style="padding:5px 8px;font-size:10px;color:#333;">' + ttl + '</td>' +
+          '<td style="padding:5px 8px;font-size:10px;color:#555;text-align:center;">' + it.quantity + '</td>' +
+          '<td style="padding:5px 8px;font-size:10px;color:#555;text-align:right;">' + Number(it.salePrice).toFixed(2) + ' AZN</td>' +
+          '<td style="padding:5px 8px;font-size:10px;color:#1c1f2a;text-align:right;font-weight:600;">' + (it.quantity * it.salePrice).toFixed(2) + ' AZN</td></tr>';
+      }
+      rows += '<tr><td colspan="3" style="padding:5px 8px;text-align:right;font-size:11px;font-weight:700;color:#1c1f2a;">Yekun:</td>' +
+        '<td style="padding:5px 8px;text-align:right;font-size:11px;font-weight:800;color:#e08a1e;">' + Number(o2.total || 0).toFixed(2) + ' AZN</td></tr>';
+
+      ordersHtml += '<div style="margin-bottom:16px;">' +
+        '<div style="font-size:13px;font-weight:700;color:#1c1f2a;margin-bottom:4px;padding-bottom:4px;border-bottom:2px solid #f5a623;">' + (o2.orderNumber || 'Sifariş ' + (oi2+1)) + '</div>' +
+        '<table style="width:100%;border-collapse:collapse;table-layout:fixed;">' +
+        '<colgroup><col style="width:48%;"><col style="width:14%;"><col style="width:20%;"><col style="width:18%;"></colgroup>' +
+        '<thead><tr style="background:#f5a623;color:#fff;">' +
+        '<th style="padding:4px 8px;text-align:left;font-size:9px;">Məhsul</th>' +
+        '<th style="padding:4px 8px;text-align:center;font-size:9px;">Say</th>' +
+        '<th style="padding:4px 8px;text-align:right;font-size:9px;">Vahid qiymət</th>' +
+        '<th style="padding:4px 8px;text-align:right;font-size:9px;">Yekun</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+    }
+
+    // Get logo as data URL to avoid CORS issues with html2canvas on file:// protocol
+    var logoSrc = 'beero-profile.jpg';
+    var logoImg = document.getElementById('profile-img');
+    if (logoImg && logoImg.complete && logoImg.naturalWidth > 0) {
+      try {
+        var c = document.createElement('canvas');
+        c.width = logoImg.naturalWidth;
+        c.height = logoImg.naturalHeight;
+        c.getContext('2d').drawImage(logoImg, 0, 0);
+        logoSrc = c.toDataURL('image/jpeg', 0.9);
+      } catch(e) {}
+    }
+
+    // Build HTML content with fixed width optimized for A4
+    var html = '<div style="padding:30px 24px;font-family:Helvetica,Arial,sans-serif;background:#ffffff;color:#1c1f2a;width:720px;">' +
+      '<div style="text-align:center;margin-bottom:20px;padding-bottom:16px;border-bottom:3px solid #f5a623;">' +
+      '<img src="' + logoSrc + '" style="width:55px;height:55px;border-radius:50%;object-fit:cover;border:3px solid #f5a623;margin:0 auto 8px;display:block;box-shadow:0 0 12px rgba(245,166,35,.3);" alt="BEER\'O">' +
+      '<div style="font-size:22px;font-weight:800;color:#1c1f2a;letter-spacing:1px;">BEER\'O</div>' +
+      '<div style="font-size:13px;font-weight:600;color:#f5a623;margin:3px 0 0;text-transform:uppercase;letter-spacing:2px;">Gündəlik Hesabat</div>' +
+      '<div style="font-size:10px;color:#999;margin:3px 0 0;">' + dateStr + ' | ' + timeStr + '</div></div>' +
+      ordersHtml +
+      '<div style="margin-top:18px;border:1px solid #e5e5e5;border-radius:6px;overflow:hidden;background:#fafbfc;">' +
+      '<div style="background:linear-gradient(135deg,#f5a623,#e08a1e);padding:10px 20px;text-align:center;">' +
+      '<div style="font-size:12px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:2px;">Ödəniş Hesabatı</div></div>' +
+      '<table style="width:100%;border-collapse:collapse;font-size:11px;">' +
+      '<tr><td style="padding:10px 20px;color:#555;border-bottom:1px solid #ececec;">Kart ilə ödənilən ümumi məbləğ</td>' +
+      '<td style="padding:10px 20px;text-align:right;font-weight:700;color:#f5a623;border-bottom:1px solid #ececec;">' + cardTotal.toFixed(2) + ' AZN</td></tr>' +
+      '<tr><td style="padding:10px 20px;color:#555;border-bottom:1px solid #ececec;">Nağd ilə ödənilən ümumi məbləğ</td>' +
+      '<td style="padding:10px 20px;text-align:right;font-weight:700;color:#f5a623;border-bottom:1px solid #ececec;">' + cashTotal.toFixed(2) + ' AZN</td></tr>' +
+      '<tr><td style="padding:10px 20px;color:#555;border-bottom:1px solid #ececec;">Çayvoy (bəxşiş)</td>' +
+      '<td style="padding:10px 20px;text-align:right;font-weight:700;color:#ff6b9d;border-bottom:1px solid #ececec;">' + pdfTip.toFixed(2) + ' AZN</td></tr>' +
+      '<tr><td style="padding:12px 20px 10px;font-weight:700;color:#1c1f2a;font-size:12px;border-top:2px solid #f5a623;">Ümumi dövriyyə (Kart + Nağd)</td>' +
+      '<td style="padding:12px 20px 10px;text-align:right;font-weight:800;color:#3ddc97;font-size:14px;border-top:2px solid #f5a623;">' + grandTotal.toFixed(2) + ' AZN</td></tr></table></div>' +
+      '<div style="text-align:center;margin-top:16px;padding-top:10px;border-top:1px solid #e0e0e0;font-size:9px;color:#aaa;">BEER\'O — Gündəlik Hesabat — ' + dateStr + '</div></div>';
+
+    var wrapper = document.createElement('div');
+    wrapper.innerHTML = html;
+    wrapper.style.position = 'absolute';
+    wrapper.style.left = '0';
+    wrapper.style.top = '0';
+    wrapper.style.zIndex = '-1';
+    wrapper.style.overflow = 'visible';
+    document.body.appendChild(wrapper);
+
+    toast('PDF hazirlanir...');
+
+    // Use html2canvas + jsPDF directly for full control
+    html2canvas(wrapper, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      width: 720,
+      windowWidth: 720
+    }).then(function(canvas) {
+      try { document.body.removeChild(wrapper); } catch(e) {}
+      
+      var imgData = canvas.toDataURL('image/jpeg', 0.95);
+      var pdf = new jspdf.jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+      
+      var pdfWidth = pdf.internal.pageSize.getWidth();
+      var pdfHeight = pdf.internal.pageSize.getHeight();
+      var margin = 8;
+      var usableWidth = pdfWidth - 2 * margin;
+      var usableHeight = pdfHeight - 2 * margin;
+      
+      // Calculate image dimensions to fit page width
+      var imgWidth = usableWidth;
+      var imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      if (imgHeight <= usableHeight) {
+        // Fits on one page
+        pdf.addImage(imgData, 'JPEG', margin, margin, imgWidth, imgHeight);
+      } else {
+        // Multi-page: split canvas across pages
+        var pageH = usableHeight;
+        var srcTotalH = canvas.height;
+        var srcPageH = (pageH * canvas.width) / imgWidth;
+        var numPages = Math.ceil(srcTotalH / srcPageH);
+        
+        for (var p = 0; p < numPages; p++) {
+          if (p > 0) pdf.addPage();
+          
+          var srcY = p * srcPageH;
+          var srcH = Math.min(srcPageH, srcTotalH - srcY);
+          
+          // Create temporary canvas for this page slice
+          var pageCanvas = document.createElement('canvas');
+          pageCanvas.width = canvas.width;
+          pageCanvas.height = srcH;
+          pageCanvas.getContext('2d').drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH);
+          
+          var pageImgData = pageCanvas.toDataURL('image/jpeg', 0.95);
+          var pageImgH = (srcH * imgWidth) / canvas.width;
+          pdf.addImage(pageImgData, 'JPEG', margin, margin, imgWidth, pageImgH);
+        }
+      }
+      
+      pdf.save('BEERO_Gundelik_Hesabat_' + dateStr + '.pdf');
+      toast('PDF yaradildi!');
+    }).catch(function(err) {
+      try { document.body.removeChild(wrapper); } catch(e) {}
+      toast('PDF xetasi', 'error');
+      console.error('PDF Error:', err);
+    });
+  } catch (err) {
+    toast('PDF xetasi: ' + (err.message || err), 'error');
+    console.error('PDF Error:', err);
+  }
+}
+/* ============ INIT ============ */
+document.addEventListener('DOMContentLoaded', () => {
+  const yearEl = $('year');
+  if (yearEl) yearEl.textContent = new Date().getFullYear();
+  const dateEl = $('current-date');
+  if (dateEl) dateEl.textContent = todayStr();
+  currentDate = todayStr();
+  // Try loading immediately and also wait for connection
+  loadOrders(currentDate);
+});
+</script>
+</body>
+</html>

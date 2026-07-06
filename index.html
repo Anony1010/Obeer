@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="az" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BEER'O</title>
+<meta name="description" content="BEER'O — məhsulların aktual qiymətləri, realtime yenilənən qiymət siyahısı.">
+<meta name="theme-color" content="#0a0b0f">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="bg-orbs" aria-hidden="true">
+    <span class="orb orb-1"></span><span class="orb orb-2"></span><span class="orb orb-3"></span>
+  </div>
+
+  <header class="topbar glass" role="banner">
+    <div class="topbar-inner">
+      <div class="topbar-left">
+        <button id="logo-wrap" class="logo-wrap" aria-label="BEER'O logo" title="BEER'O">
+          <img id="profile-img" src="beero-profile.jpg" alt="BEER'O">
+        </button>
+      </div>
+
+      <div class="topbar-center" aria-hidden="true">BEER'O</div>
+
+      <div class="topbar-right">
+        <button id="theme-toggle" class="icon-btn" aria-label="Tema dəyiş" title="Dark / Light">
+          <span class="ic" id="theme-icon" aria-hidden="true"></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="search-wrap">
+      <div class="search-box glass" role="search">
+        <span class="ic" aria-hidden="true"></span>
+        <input id="search-input" type="text" placeholder="Məhsul axtar..." aria-label="Məhsul axtar" autocomplete="off">
+        <button id="search-clear" class="search-clear hidden" aria-label="Axtarışı təmizlə"><span class="ic" aria-hidden="true"></span></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container" role="main">
+    <div id="sync-badge" class="sync-badge offline" aria-live="polite">
+      <span class="sync-dot"></span><span id="sync-text">Bağlanır...</span>
+    </div>
+
+    <section id="skeleton-grid" class="grid" aria-hidden="true"></section>
+
+    <section id="product-grid" class="grid hidden" aria-live="polite"></section>
+
+    <div id="empty-state" class="empty-state hidden">
+      <div class="empty-icon"><span class="ic" aria-hidden="true"></span></div>
+      <h2>Məhsul tapılmadı</h2>
+      <p id="empty-text">Hələ heç bir məhsul əlavə edilməyib.</p>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>© <span id="year"></span> BEER'O</p>
+  </footer>
+
+  <script src="icons.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

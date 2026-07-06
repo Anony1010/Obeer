@@ -977,8 +977,7 @@ async function makePDF(orderList, dateStr) {
 
     // === SABİTLƏR ===
     var W = 770, SCALE = 3, PDF_MARGIN = 6;
-    var PAD = 35; // horizontal padding
-    var PAD_TOP = 36, PAD_BOT = 30;
+    var PAD = 35, PAD_TOP = 36, PAD_BOT = 30;
 
     // === HTML BİLDİCİLƏR ===
     function esc(s) {
@@ -1061,37 +1060,38 @@ async function makePDF(orderList, dateStr) {
     document.body.removeChild(mDiv);
 
     // === SƏHİFƏLƏMƏ ===
-    // A4: 210x297mm, margin 6mm -> content 198x285mm
-    // 770px CSS width fits 198mm -> 1mm = 770/198 = 3.889 CSS px
-    // Max CSS height per page: 285 * 3.889 = ~1108px
     var MAX_PX = Math.floor(285 * (W / 198));
-    var availablePerPage = MAX_PX - headerH - footerH - PAD_TOP - PAD_BOT;
+    // First page has header, subsequent pages don't
+    var availFirst = MAX_PX - headerH - footerH - PAD_TOP - PAD_BOT;
+    var availOther = MAX_PX - footerH - PAD_TOP - PAD_BOT;
 
     var pages = [];
     var curOrders = [], curH = 0;
-    var gap = 18; // margin-bottom between orders
+    var gap = 18;
+    var isFirst = true;
 
     for (var i = 0; i < orderList.length; i++) {
+      var avail = isFirst ? availFirst : availOther;
       var need = orderHeights[i] + (curOrders.length > 0 ? gap : 0);
-      if (curOrders.length > 0 && curH + need > availablePerPage) {
-        pages.push(curOrders);
+      if (curOrders.length > 0 && curH + need > avail) {
+        pages.push({ orders: curOrders, hasHeader: isFirst });
         curOrders = [i];
         curH = orderHeights[i];
+        isFirst = false;
       } else {
         curOrders.push(i);
         curH += need;
       }
     }
-    if (curOrders.length > 0) pages.push(curOrders);
-
-    // Summary needs its own page check
-    var summaryFitsOnLast = (curH + summaryH + gap <= availablePerPage);
-    if (!summaryFitsOnLast && pages.length > 0 && pages[pages.length-1].length === 0) {
-      // summary gets its own page (handled below)
+    if (curOrders.length > 0) {
+      pages.push({ orders: curOrders, hasHeader: isFirst });
     }
-    // If summary doesn't fit on last order page, add an empty page slot
-    var totalPages = pages.length;
-    if (!summaryFitsOnLast) totalPages++;
+
+    // Determine if summary fits on the last order page
+    var lastPage = pages[pages.length - 1];
+    var lastPageAvail = lastPage && lastPage.hasHeader ? availFirst : availOther;
+    var summaryFitsOnLast = lastPage && (curH + summaryH + gap <= lastPageAvail);
+    var totalPages = pages.length + (summaryFitsOnLast ? 0 : 1);
 
     // === RENDER ===
     const { jsPDF } = window.jspdf;
@@ -1100,7 +1100,9 @@ async function makePDF(orderList, dateStr) {
     toast('PDF hazirlanir...');
 
     for (var pg = 0; pg < pages.length; pg++) {
-      var orderIndices = pages[pg];
+      var pageInfo = pages[pg];
+      var orderIndices = pageInfo.orders;
+      var hasHeader = pageInfo.hasHeader;
       var isLastOrderPage = (pg === pages.length - 1);
       var putSummary = isLastOrderPage && summaryFitsOnLast;
 
@@ -1111,7 +1113,7 @@ async function makePDF(orderList, dateStr) {
       if (putSummary) bodyHTML += summaryHTML();
 
       var pageHTML = '<div style="padding:' + PAD_TOP + 'px ' + PAD + 'px ' + PAD_BOT + 'px;font-family:Helvetica,Arial,sans-serif;background:#fff;color:#1a1d26;width:' + W + 'px;">' +
-        headerHTML() + bodyHTML + footerHTML(pg + 1, totalPages) + '</div>';
+        (hasHeader ? headerHTML() : '') + bodyHTML + footerHTML(pg + 1, totalPages) + '</div>';
 
       var wr = document.createElement('div');
       wr.innerHTML = pageHTML;
@@ -1127,17 +1129,16 @@ async function makePDF(orderList, dateStr) {
       if (pg > 0) pdf.addPage();
       var imgData = canvas.toDataURL('image/jpeg', 0.98);
       var pw = pdf.internal.pageSize.getWidth();
-      var ph = pdf.internal.pageSize.getHeight();
       var uw = pw - 2 * PDF_MARGIN;
       var iw = uw;
       var ih = (canvas.height * iw) / canvas.width;
       pdf.addImage(imgData, 'JPEG', PDF_MARGIN, PDF_MARGIN, iw, ih);
     }
 
-    // Handle summary on its own page if needed
+    // Summary on its own page if needed
     if (!summaryFitsOnLast) {
       var sumHTML = '<div style="padding:' + PAD_TOP + 'px ' + PAD + 'px ' + PAD_BOT + 'px;font-family:Helvetica,Arial,sans-serif;background:#fff;color:#1a1d26;width:' + W + 'px;">' +
-        headerHTML() + summaryHTML() + footerHTML(totalPages, totalPages) + '</div>';
+        (pages.length === 0 ? headerHTML() : '') + summaryHTML() + footerHTML(totalPages, totalPages) + '</div>';
 
       var swr = document.createElement('div');
       swr.innerHTML = sumHTML;
@@ -1153,11 +1154,8 @@ async function makePDF(orderList, dateStr) {
       pdf.addPage();
       var sImgData = scanvas.toDataURL('image/jpeg', 0.98);
       var pw2 = pdf.internal.pageSize.getWidth();
-      var ph2 = pdf.internal.pageSize.getHeight();
       var uw2 = pw2 - 2 * PDF_MARGIN;
-      var siw = uw2;
-      var sih = (scanvas.height * siw) / scanvas.width;
-      pdf.addImage(sImgData, 'JPEG', PDF_MARGIN, PDF_MARGIN, siw, sih);
+      pdf.addImage(sImgData, 'JPEG', PDF_MARGIN, PDF_MARGIN, uw2, (scanvas.height * uw2) / scanvas.width);
     }
 
     pdf.save('BEERO_Gundelik_Hesabat_' + dateStr + '.pdf');

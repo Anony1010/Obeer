@@ -993,7 +993,7 @@ async function makePDF(orderList, dateStr) {
     }
 
     function footerHTML() {
-      return '<div style="text-align:center;padding-top:6px;font-size:8px;color:#9aa0b1;">BEER\'O — Gündəlik Hesabat</div>';
+      return '<div style="text-align:center;font-size:8px;color:#9aa0b1;">BEER\'O — Gündəlik Hesabat</div>';
     }
 
     function orderHTML(o2, idx) {
@@ -1061,7 +1061,7 @@ async function makePDF(orderList, dateStr) {
 
     // === SƏHİFƏLƏMƏ ===
     var MAX_PX = Math.floor(285 * (W / 198));
-    // Footer only appears on the last page, so don't subtract footerH from non-last pages
+    // Footer only on last page, so don't subtract footerH from non-last pages
     var availFirst = MAX_PX - headerH - PAD_TOP - PAD_BOT;
     var availOther = MAX_PX - PAD_TOP - PAD_BOT;
 
@@ -1105,7 +1105,7 @@ async function makePDF(orderList, dateStr) {
       var hasHeader = pageInfo.hasHeader;
       var isLastOrderPage = (pg === pages.length - 1);
       var putSummary = isLastOrderPage && summaryFitsOnLast;
-      var isAbsoluteLast = isLastOrderPage && summaryFitsOnLast; // true if this is last rendered page
+      var isAbsoluteLast = isLastOrderPage && summaryFitsOnLast;
 
       var bodyHTML = '';
       for (var j = 0; j < orderIndices.length; j++) {
@@ -1113,8 +1113,19 @@ async function makePDF(orderList, dateStr) {
       }
       if (putSummary) bodyHTML += summaryHTML();
 
-      var pageHTML = '<div style="padding:' + PAD_TOP + 'px ' + PAD + 'px ' + PAD_BOT + 'px;font-family:Helvetica,Arial,sans-serif;background:#fff;color:#1a1d26;width:' + W + 'px;">' +
-        (hasHeader ? headerHTML() : '') + bodyHTML + (isAbsoluteLast ? footerHTML() : '') + '</div>';
+      var contentBody = (hasHeader ? headerHTML() : '') + bodyHTML;
+      var pageContentH = MAX_PX - PAD_TOP - PAD_BOT;
+
+      var pageHTML;
+      if (isAbsoluteLast) {
+        // Last page: flexbox pushes footer to the very bottom
+        pageHTML = '<div style="padding:' + PAD_TOP + 'px ' + PAD + 'px ' + PAD_BOT + 'px;font-family:Helvetica,Arial,sans-serif;background:#fff;color:#1a1d26;width:' + W + 'px;box-sizing:border-box;display:flex;flex-direction:column;min-height:' + pageContentH + 'px;">' +
+          '<div>' + contentBody + '</div>' +
+          '<div style="margin-top:auto;">' + footerHTML() + '</div></div>';
+      } else {
+        pageHTML = '<div style="padding:' + PAD_TOP + 'px ' + PAD + 'px ' + PAD_BOT + 'px;font-family:Helvetica,Arial,sans-serif;background:#fff;color:#1a1d26;width:' + W + 'px;">' +
+          contentBody + '</div>';
+      }
 
       var wr = document.createElement('div');
       wr.innerHTML = pageHTML;
@@ -1138,8 +1149,11 @@ async function makePDF(orderList, dateStr) {
 
     // Summary on its own page if needed
     if (!summaryFitsOnLast) {
-      var sumHTML = '<div style="padding:' + PAD_TOP + 'px ' + PAD + 'px ' + PAD_BOT + 'px;font-family:Helvetica,Arial,sans-serif;background:#fff;color:#1a1d26;width:' + W + 'px;">' +
-        (pages.length === 0 ? headerHTML() : '') + summaryHTML() + footerHTML() + '</div>';
+      var sumContentH = MAX_PX - PAD_TOP - PAD_BOT;
+      var sumHead = pages.length === 0 ? headerHTML() : '';
+      var sumHTML = '<div style="padding:' + PAD_TOP + 'px ' + PAD + 'px ' + PAD_BOT + 'px;font-family:Helvetica,Arial,sans-serif;background:#fff;color:#1a1d26;width:' + W + 'px;box-sizing:border-box;display:flex;flex-direction:column;min-height:' + sumContentH + 'px;">' +
+        '<div>' + sumHead + summaryHTML() + '</div>' +
+        '<div style="margin-top:auto;">' + footerHTML() + '</div></div>';
 
       var swr = document.createElement('div');
       swr.innerHTML = sumHTML;

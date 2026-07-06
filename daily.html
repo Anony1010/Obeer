@@ -999,13 +999,13 @@ async function makePDF(orderList, dateStr) {
       '<div style="background:linear-gradient(135deg,#e08a1e,#f5a623);padding:14px 28px;text-align:center;">' +
       '<div style="font-size:14px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:3px;">Ödəniş Hesabatı</div></div>' +
       '<table style="width:100%;border-collapse:collapse;font-size:13px;">' +
-      '<tr><td style="padding:14px 28px;color:#3a3f4e;border-bottom:1px solid #e4e9f0;font-weight:500;">💳 Kart ilə ödənilən ümumi məbləğ</td>' +
+      '<tr><td style="padding:14px 28px;color:#3a3f4e;border-bottom:1px solid #e4e9f0;font-weight:500;">Kart ilə ödənilən ümumi məbləğ</td>' +
       '<td style="padding:14px 28px;text-align:right;font-weight:700;color:#e08a1e;border-bottom:1px solid #e4e9f0;font-size:14px;">' + cardTotal.toFixed(2) + ' AZN</td></tr>' +
-      '<tr><td style="padding:14px 28px;color:#3a3f4e;border-bottom:1px solid #e4e9f0;font-weight:500;">💵 Nağd ilə ödənilən ümumi məbləğ</td>' +
+      '<tr><td style="padding:14px 28px;color:#3a3f4e;border-bottom:1px solid #e4e9f0;font-weight:500;">Nağd ilə ödənilən ümumi məbləğ</td>' +
       '<td style="padding:14px 28px;text-align:right;font-weight:700;color:#e08a1e;border-bottom:1px solid #e4e9f0;font-size:14px;">' + cashTotal.toFixed(2) + ' AZN</td></tr>' +
-      '<tr><td style="padding:14px 28px;color:#3a3f4e;border-bottom:1px solid #e4e9f0;font-weight:500;">☕ Çayvoy (bəxşiş)</td>' +
+      '<tr><td style="padding:14px 28px;color:#3a3f4e;border-bottom:1px solid #e4e9f0;font-weight:500;">Çayvoy (bəxşiş)</td>' +
       '<td style="padding:14px 28px;text-align:right;font-weight:700;color:#e8597a;border-bottom:1px solid #e4e9f0;font-size:14px;">' + pdfTip.toFixed(2) + ' AZN</td></tr>' +
-      '<tr><td style="padding:16px 28px 14px;font-weight:700;color:#1a1d26;font-size:15px;border-top:3px solid #e08a1e;">📊 Ümumi dövriyyə (Kart + Nağd)</td>' +
+      '<tr><td style="padding:16px 28px 14px;font-weight:700;color:#1a1d26;font-size:15px;border-top:3px solid #e08a1e;">Ümumi dövriyyə (Kart + Nağd)</td>' +
       '<td style="padding:16px 28px 14px;text-align:right;font-weight:800;color:#22b485;font-size:17px;border-top:3px solid #e08a1e;">' + grandTotal.toFixed(2) + ' AZN</td></tr></table></div>' +
       '<div style="text-align:center;margin-top:20px;padding-top:12px;border-top:1px solid #e4e9f0;font-size:10px;color:#9aa0b1;">BEER\'O — Gündəlik Hesabat — ' + dateStr + ' | ' + timeStr + '</div>';
 

@@ -950,66 +950,19 @@ async function makePDF(orderList, dateStr) {
   }
 
   try {
-    var cardTotal = 0, cashTotal = 0, grandTotal = 0;
-    var pdfTip = 0;
+    // === HESABLAMALAR ===
+    var cardTotal = 0, cashTotal = 0, grandTotal = 0, pdfTip = 0;
     for (var oi = 0; oi < orderList.length; oi++) {
-      var o = orderList[oi];
-      var t = o.total || 0;
+      var o = orderList[oi], t = o.total || 0;
       if (o.paymentType === 'Kart') cardTotal += t; else cashTotal += t;
       grandTotal += t;
     }
-    var tipRef = db.ref('daily-reports/' + dateStr + '/tip');
-    try { pdfTip = (await tipRef.once('value')).val() || 0; } catch(e) {}
+    try { pdfTip = (await db.ref('daily-reports/' + dateStr + '/tip').once('value')).val() || 0; } catch(e) {}
 
     var now = new Date();
     var timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
 
-    // Build HTML for all orders
-    var ordersHtml = '';
-    for (var oi2 = 0; oi2 < orderList.length; oi2++) {
-      var o2 = orderList[oi2];
-      var keys = o2.items ? Object.keys(o2.items) : [];
-      var rows = '';
-      for (var ki = 0; ki < keys.length; ki++) {
-        var it = o2.items[keys[ki]];
-        var ttl = (it.title || '').replace(/[&<>]/g, function(m) { return {'&':'&amp;','<':'&lt;','>':'&gt;'}[m]; });
-        var isEven = ki % 2 === 0;
-        rows += '<tr style="border-bottom:1px solid #e4e9f0;' + (isEven ? 'background:#f6f8fa;' : '') + '">' +
-          '<td style="padding:10px 14px;font-size:12px;color:#1a1d26;line-height:1.5;">' + ttl + '</td>' +
-          '<td style="padding:10px 14px;font-size:12px;color:#4a4f5e;text-align:center;font-weight:500;">' + it.quantity + '</td>' +
-          '<td style="padding:10px 14px;font-size:12px;color:#4a4f5e;text-align:right;">' + Number(it.salePrice).toFixed(2) + ' AZN</td>' +
-          '<td style="padding:10px 14px;font-size:13px;color:#1a1d26;text-align:right;font-weight:700;">' + (it.quantity * it.salePrice).toFixed(2) + ' AZN</td></tr>';
-      }
-      rows += '<tr><td colspan="3" style="padding:10px 14px;text-align:right;font-size:13px;font-weight:700;color:#1a1d26;border-top:2px solid #dce0e8;">Yekun:</td>' +
-        '<td style="padding:10px 14px;text-align:right;font-size:14px;font-weight:800;color:#e08a1e;border-top:2px solid #dce0e8;">' + Number(o2.total || 0).toFixed(2) + ' AZN</td></tr>';
-
-      ordersHtml += '<div style="margin-bottom:28px;">' +
-        '<div style="font-size:15px;font-weight:700;color:#1a1d26;margin-bottom:8px;padding-bottom:6px;border-bottom:2px solid #e08a1e;">' + (o2.orderNumber || 'Sifariş ' + (oi2+1)) + '</div>' +
-        '<table style="width:100%;border-collapse:collapse;">' +
-        '<thead><tr style="background:linear-gradient(135deg,#e08a1e,#f5a623);color:#fff;">' +
-        '<th style="padding:9px 14px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;">Məhsul</th>' +
-        '<th style="padding:9px 14px;text-align:center;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;">Say</th>' +
-        '<th style="padding:9px 14px;text-align:right;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;">Vahid qiymət</th>' +
-        '<th style="padding:9px 14px;text-align:right;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;">Yekun</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
-    }
-
-    // Build payment summary HTML
-    var summaryHtml =
-      '<div style="margin-top:28px;border:1px solid #e4e9f0;border-radius:12px;overflow:hidden;background:#ffffff;box-shadow:0 4px 16px rgba(0,0,0,0.06);">' +
-      '<div style="background:linear-gradient(135deg,#e08a1e,#f5a623);padding:14px 28px;text-align:center;">' +
-      '<div style="font-size:14px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:3px;">Ödəniş Hesabatı</div></div>' +
-      '<table style="width:100%;border-collapse:collapse;font-size:13px;">' +
-      '<tr><td style="padding:14px 28px;color:#3a3f4e;border-bottom:1px solid #e4e9f0;font-weight:500;">Kart ilə ödənilən ümumi məbləğ</td>' +
-      '<td style="padding:14px 28px;text-align:right;font-weight:700;color:#e08a1e;border-bottom:1px solid #e4e9f0;font-size:14px;">' + cardTotal.toFixed(2) + ' AZN</td></tr>' +
-      '<tr><td style="padding:14px 28px;color:#3a3f4e;border-bottom:1px solid #e4e9f0;font-weight:500;">Nağd ilə ödənilən ümumi məbləğ</td>' +
-      '<td style="padding:14px 28px;text-align:right;font-weight:700;color:#e08a1e;border-bottom:1px solid #e4e9f0;font-size:14px;">' + cashTotal.toFixed(2) + ' AZN</td></tr>' +
-      '<tr><td style="padding:14px 28px;color:#3a3f4e;border-bottom:1px solid #e4e9f0;font-weight:500;">Çayvoy (bəxşiş)</td>' +
-      '<td style="padding:14px 28px;text-align:right;font-weight:700;color:#e8597a;border-bottom:1px solid #e4e9f0;font-size:14px;">' + pdfTip.toFixed(2) + ' AZN</td></tr>' +
-      '<tr><td style="padding:16px 28px 14px;font-weight:700;color:#1a1d26;font-size:15px;border-top:3px solid #e08a1e;">Ümumi dövriyyə (Kart + Nağd)</td>' +
-      '<td style="padding:16px 28px 14px;text-align:right;font-weight:800;color:#22b485;font-size:17px;border-top:3px solid #e08a1e;">' + grandTotal.toFixed(2) + ' AZN</td></tr></table></div>' +
-      '<div style="text-align:center;margin-top:20px;padding-top:12px;border-top:1px solid #e4e9f0;font-size:10px;color:#9aa0b1;">BEER\'O — Gündəlik Hesabat — ' + dateStr + ' | ' + timeStr + '</div>';
-
-    // Get logo as data URL
+    // === LOGO ===
     var logoSrc = 'beero-profile.jpg';
     var logoImg = document.getElementById('profile-img');
     if (logoImg && logoImg.complete && logoImg.naturalWidth > 0) {
@@ -1022,83 +975,200 @@ async function makePDF(orderList, dateStr) {
       } catch(e) {}
     }
 
-    // Full HTML with spacious, clean design
-    var html = '<div style="padding:40px 35px;font-family:Helvetica,Arial,sans-serif;background:#ffffff;color:#1a1d26;width:770px;">' +
-      '<div style="text-align:center;margin-bottom:28px;padding-bottom:20px;border-bottom:3px solid #e08a1e;">' +
-      '<img src="' + logoSrc + '" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:3px solid #e08a1e;margin:0 auto 12px;display:block;" alt="BEER\'O">' +
-      '<div style="font-size:26px;font-weight:800;color:#1a1d26;letter-spacing:1px;margin-bottom:4px;">BEER\'O</div>' +
-      '<div style="font-size:14px;font-weight:600;color:#e08a1e;margin:0;text-transform:uppercase;letter-spacing:3.5px;">Gündəlik Hesabat</div>' +
-      '<div style="font-size:11px;color:#9aa0b1;margin-top:6px;">' + dateStr + ' | ' + timeStr + '</div></div>' +
-      ordersHtml + summaryHtml + '</div>';
+    // === SABİTLƏR ===
+    var W = 770, SCALE = 3, PDF_MARGIN = 6;
+    var PAD = 35; // horizontal padding
+    var PAD_TOP = 36, PAD_BOT = 30;
 
-    var wrapper = document.createElement('div');
-    wrapper.innerHTML = html;
-    wrapper.style.position = 'absolute';
-    wrapper.style.left = '0';
-    wrapper.style.top = '0';
-    wrapper.style.zIndex = '-1';
-    wrapper.style.overflow = 'visible';
-    document.body.appendChild(wrapper);
+    // === HTML BİLDİCİLƏR ===
+    function esc(s) {
+      return String(s).replace(/[&<>]/g, function(m) { return {'&':'&amp;','<':'&lt;','>':'&gt;'}[m]; });
+    }
+
+    function headerHTML() {
+      return '<div style="text-align:center;margin-bottom:18px;padding-bottom:14px;border-bottom:2px solid #e08a1e;">' +
+        '<img src="' + logoSrc + '" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #e08a1e;margin:0 auto 8px;display:block;" alt="BEER\'O">' +
+        '<div style="font-size:22px;font-weight:800;color:#1a1d26;letter-spacing:0.5px;margin-bottom:2px;">BEER\'O</div>' +
+        '<div style="font-size:12px;font-weight:600;color:#e08a1e;text-transform:uppercase;letter-spacing:2.5px;">Gündəlik Hesabat</div>' +
+        '<div style="font-size:10px;color:#9aa0b1;margin-top:4px;">' + dateStr + ' | ' + timeStr + '</div></div>';
+    }
+
+    function footerHTML(pg, totalPg) {
+      return '<div style="text-align:center;padding-top:10px;border-top:1px solid #e4e9f0;font-size:9px;color:#9aa0b1;">BEER\'O — Gündəlik Hesabat — ' + dateStr + ' | Səhifə ' + pg + ' / ' + totalPg + '</div>';
+    }
+
+    function orderHTML(o2, idx) {
+      var keys = o2.items ? Object.keys(o2.items) : [];
+      var rows = '';
+      for (var ki = 0; ki < keys.length; ki++) {
+        var it = o2.items[keys[ki]];
+        var ttl = esc(it.title || '');
+        var isEven = ki % 2 === 0;
+        rows += '<tr style="border-bottom:1px solid #e8ecf2;' + (isEven ? 'background:#f7f9fb;' : '') + '">' +
+          '<td style="padding:7px 12px;font-size:11px;color:#1a1d26;">' + ttl + '</td>' +
+          '<td style="padding:7px 12px;font-size:11px;color:#4a4f5e;text-align:center;">' + it.quantity + '</td>' +
+          '<td style="padding:7px 12px;font-size:11px;color:#4a4f5e;text-align:right;">' + Number(it.salePrice).toFixed(2) + ' AZN</td>' +
+          '<td style="padding:7px 12px;font-size:11px;color:#1a1d26;text-align:right;font-weight:600;">' + (it.quantity * it.salePrice).toFixed(2) + ' AZN</td></tr>';
+      }
+      rows += '<tr><td colspan="3" style="padding:7px 12px;text-align:right;font-size:12px;font-weight:700;color:#1a1d26;border-top:2px solid #dce0e8;">Yekun:</td>' +
+        '<td style="padding:7px 12px;text-align:right;font-size:12px;font-weight:800;color:#e08a1e;border-top:2px solid #dce0e8;">' + Number(o2.total || 0).toFixed(2) + ' AZN</td></tr>';
+
+      return '<div style="margin-bottom:18px;">' +
+        '<div style="font-size:14px;font-weight:700;color:#1a1d26;margin-bottom:6px;padding-bottom:4px;border-bottom:2px solid #e08a1e;">' + (o2.orderNumber || 'Sifariş ' + (idx+1)) + '</div>' +
+        '<table style="width:100%;border-collapse:collapse;">' +
+        '<colgroup><col style="width:48%;"><col style="width:14%;"><col style="width:20%;"><col style="width:18%;"></colgroup>' +
+        '<thead><tr style="background:#e08a1e;color:#fff;">' +
+        '<th style="padding:7px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Məhsul</th>' +
+        '<th style="padding:7px 12px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Say</th>' +
+        '<th style="padding:7px 12px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Vahid qiymət</th>' +
+        '<th style="padding:7px 12px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Yekun</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+    }
+
+    function summaryHTML() {
+      return '<div style="margin-top:6px;border:1px solid #e4e9f0;border-radius:10px;overflow:hidden;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,0.05);">' +
+        '<div style="background:#e08a1e;padding:10px 24px;text-align:center;"><div style="font-size:12px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:2.5px;">Ödəniş Hesabatı</div></div>' +
+        '<table style="width:100%;border-collapse:collapse;font-size:12px;">' +
+        '<tr><td style="padding:11px 24px;color:#3a3f4e;border-bottom:1px solid #e8ecf2;">Kart ilə ödənilən ümumi məbləğ</td>' +
+        '<td style="padding:11px 24px;text-align:right;font-weight:700;color:#e08a1e;border-bottom:1px solid #e8ecf2;">' + cardTotal.toFixed(2) + ' AZN</td></tr>' +
+        '<tr><td style="padding:11px 24px;color:#3a3f4e;border-bottom:1px solid #e8ecf2;">Nağd ilə ödənilən ümumi məbləğ</td>' +
+        '<td style="padding:11px 24px;text-align:right;font-weight:700;color:#e08a1e;border-bottom:1px solid #e8ecf2;">' + cashTotal.toFixed(2) + ' AZN</td></tr>' +
+        '<tr><td style="padding:11px 24px;color:#3a3f4e;border-bottom:1px solid #e8ecf2;">Çayvoy (bəxşiş)</td>' +
+        '<td style="padding:11px 24px;text-align:right;font-weight:700;color:#e8597a;border-bottom:1px solid #e8ecf2;">' + pdfTip.toFixed(2) + ' AZN</td></tr>' +
+        '<tr><td style="padding:12px 24px 10px;font-weight:700;color:#1a1d26;font-size:13px;border-top:2px solid #e08a1e;">Ümumi dövriyyə (Kart + Nağd)</td>' +
+        '<td style="padding:12px 24px 10px;text-align:right;font-weight:800;color:#22b485;font-size:15px;border-top:2px solid #e08a1e;">' + grandTotal.toFixed(2) + ' AZN</td></tr></table></div>';
+    }
+
+    // === ÖLÇÜ ===
+    var mDiv = document.createElement('div');
+    mDiv.style.cssText = 'position:absolute;left:-9999px;top:0;width:' + W + 'px;font-family:Helvetica,Arial,sans-serif;background:#fff;color:#1a1d26;';
+    document.body.appendChild(mDiv);
+
+    var headerH, footerH, summaryH;
+    mDiv.innerHTML = '<div style="padding:' + PAD_TOP + 'px ' + PAD + 'px 0;">' + headerHTML() + '</div>';
+    headerH = mDiv.scrollHeight;
+
+    mDiv.innerHTML = '<div style="padding:0 ' + PAD + 'px;">' + footerHTML(1, 1) + '</div>';
+    footerH = mDiv.scrollHeight;
+
+    mDiv.innerHTML = '<div style="padding:0 ' + PAD + 'px;">' + summaryHTML() + '</div>';
+    summaryH = mDiv.scrollHeight;
+
+    var orderHeights = [];
+    for (var oi2 = 0; oi2 < orderList.length; oi2++) {
+      mDiv.innerHTML = '<div style="padding:0 ' + PAD + 'px;">' + orderHTML(orderList[oi2], oi2) + '</div>';
+      orderHeights.push(mDiv.scrollHeight);
+    }
+    document.body.removeChild(mDiv);
+
+    // === SƏHİFƏLƏMƏ ===
+    // A4: 210x297mm, margin 6mm -> content 198x285mm
+    // 770px CSS width fits 198mm -> 1mm = 770/198 = 3.889 CSS px
+    // Max CSS height per page: 285 * 3.889 = ~1108px
+    var MAX_PX = Math.floor(285 * (W / 198));
+    var availablePerPage = MAX_PX - headerH - footerH - PAD_TOP - PAD_BOT;
+
+    var pages = [];
+    var curOrders = [], curH = 0;
+    var gap = 18; // margin-bottom between orders
+
+    for (var i = 0; i < orderList.length; i++) {
+      var need = orderHeights[i] + (curOrders.length > 0 ? gap : 0);
+      if (curOrders.length > 0 && curH + need > availablePerPage) {
+        pages.push(curOrders);
+        curOrders = [i];
+        curH = orderHeights[i];
+      } else {
+        curOrders.push(i);
+        curH += need;
+      }
+    }
+    if (curOrders.length > 0) pages.push(curOrders);
+
+    // Summary needs its own page check
+    var summaryFitsOnLast = (curH + summaryH + gap <= availablePerPage);
+    if (!summaryFitsOnLast && pages.length > 0 && pages[pages.length-1].length === 0) {
+      // summary gets its own page (handled below)
+    }
+    // If summary doesn't fit on last order page, add an empty page slot
+    var totalPages = pages.length;
+    if (!summaryFitsOnLast) totalPages++;
+
+    // === RENDER ===
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
 
     toast('PDF hazirlanir...');
 
-    // Render with high quality
-    html2canvas(wrapper, {
-      scale: 3,
-      useCORS: true,
-      logging: false,
-      width: 770,
-      windowWidth: 770,
-      backgroundColor: '#ffffff'
-    }).then(function(canvas) {
-      try { document.body.removeChild(wrapper); } catch(e) {}
+    for (var pg = 0; pg < pages.length; pg++) {
+      var orderIndices = pages[pg];
+      var isLastOrderPage = (pg === pages.length - 1);
+      var putSummary = isLastOrderPage && summaryFitsOnLast;
 
-      var imgData = canvas.toDataURL('image/jpeg', 0.98);
-      var pdf = new jspdf.jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
-
-      var pdfWidth = pdf.internal.pageSize.getWidth();
-      var pdfHeight = pdf.internal.pageSize.getHeight();
-      var margin = 6;
-      var usableWidth = pdfWidth - 2 * margin;
-      var usableHeight = pdfHeight - 2 * margin;
-
-      var imgWidth = usableWidth;
-      var imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-      if (imgHeight <= usableHeight) {
-        pdf.addImage(imgData, 'JPEG', margin, margin, imgWidth, imgHeight);
-      } else {
-        var pageH = usableHeight;
-        var srcTotalH = canvas.height;
-        var srcPageH = (pageH * canvas.width) / imgWidth;
-        var numPages = Math.ceil(srcTotalH / srcPageH);
-
-        for (var p = 0; p < numPages; p++) {
-          if (p > 0) pdf.addPage();
-          var srcY = p * srcPageH;
-          var srcH = Math.min(srcPageH, srcTotalH - srcY);
-          var pageCanvas = document.createElement('canvas');
-          pageCanvas.width = canvas.width;
-          pageCanvas.height = srcH;
-          pageCanvas.getContext('2d').drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH);
-          var pageImgData = pageCanvas.toDataURL('image/jpeg', 0.98);
-          var pageImgH = (srcH * imgWidth) / canvas.width;
-          pdf.addImage(pageImgData, 'JPEG', margin, margin, imgWidth, pageImgH);
-        }
+      var bodyHTML = '';
+      for (var j = 0; j < orderIndices.length; j++) {
+        bodyHTML += orderHTML(orderList[orderIndices[j]], orderIndices[j]);
       }
+      if (putSummary) bodyHTML += summaryHTML();
 
-      pdf.save('BEERO_Gundelik_Hesabat_' + dateStr + '.pdf');
-      toast('PDF yaradildi!');
-    }).catch(function(err) {
-      try { document.body.removeChild(wrapper); } catch(e) {}
-      toast('PDF xetasi', 'error');
-      console.error('PDF Error:', err);
-    });
+      var pageHTML = '<div style="padding:' + PAD_TOP + 'px ' + PAD + 'px ' + PAD_BOT + 'px;font-family:Helvetica,Arial,sans-serif;background:#fff;color:#1a1d26;width:' + W + 'px;">' +
+        headerHTML() + bodyHTML + footerHTML(pg + 1, totalPages) + '</div>';
+
+      var wr = document.createElement('div');
+      wr.innerHTML = pageHTML;
+      wr.style.cssText = 'position:absolute;left:0;top:0;z-index:-1;';
+      document.body.appendChild(wr);
+
+      var canvas = await html2canvas(wr, {
+        scale: SCALE, useCORS: true, logging: false,
+        width: W, windowWidth: W, backgroundColor: '#ffffff'
+      });
+      document.body.removeChild(wr);
+
+      if (pg > 0) pdf.addPage();
+      var imgData = canvas.toDataURL('image/jpeg', 0.98);
+      var pw = pdf.internal.pageSize.getWidth();
+      var ph = pdf.internal.pageSize.getHeight();
+      var uw = pw - 2 * PDF_MARGIN;
+      var iw = uw;
+      var ih = (canvas.height * iw) / canvas.width;
+      pdf.addImage(imgData, 'JPEG', PDF_MARGIN, PDF_MARGIN, iw, ih);
+    }
+
+    // Handle summary on its own page if needed
+    if (!summaryFitsOnLast) {
+      var sumHTML = '<div style="padding:' + PAD_TOP + 'px ' + PAD + 'px ' + PAD_BOT + 'px;font-family:Helvetica,Arial,sans-serif;background:#fff;color:#1a1d26;width:' + W + 'px;">' +
+        headerHTML() + summaryHTML() + footerHTML(totalPages, totalPages) + '</div>';
+
+      var swr = document.createElement('div');
+      swr.innerHTML = sumHTML;
+      swr.style.cssText = 'position:absolute;left:0;top:0;z-index:-1;';
+      document.body.appendChild(swr);
+
+      var scanvas = await html2canvas(swr, {
+        scale: SCALE, useCORS: true, logging: false,
+        width: W, windowWidth: W, backgroundColor: '#ffffff'
+      });
+      document.body.removeChild(swr);
+
+      pdf.addPage();
+      var sImgData = scanvas.toDataURL('image/jpeg', 0.98);
+      var pw2 = pdf.internal.pageSize.getWidth();
+      var ph2 = pdf.internal.pageSize.getHeight();
+      var uw2 = pw2 - 2 * PDF_MARGIN;
+      var siw = uw2;
+      var sih = (scanvas.height * siw) / scanvas.width;
+      pdf.addImage(sImgData, 'JPEG', PDF_MARGIN, PDF_MARGIN, siw, sih);
+    }
+
+    pdf.save('BEERO_Gundelik_Hesabat_' + dateStr + '.pdf');
+    toast('PDF yaradildi!');
+
   } catch (err) {
     toast('PDF xetasi: ' + (err.message || err), 'error');
     console.error('PDF Error:', err);
   }
-}/* ============ INIT ============ */
+}
+/* ============ INIT ============ */
 document.addEventListener('DOMContentLoaded', () => {
   const yearEl = $('year');
   if (yearEl) yearEl.textContent = new Date().getFullYear();

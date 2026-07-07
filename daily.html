@@ -622,6 +622,18 @@ document.addEventListener('click', e => {
 });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+  if ((e.key === 'n' || e.key === 'N') && !e.target.matches('input,textarea,select')) {
+    e.preventDefault();
+    const orderModal = $('order-modal');
+    if (!orderModal.classList.contains('active')) {
+      editingOrderId = null;
+      currentOrderItems = [];
+      $('order-modal-title').textContent = 'Yeni Sifariş';
+      $('order-items').innerHTML = '<div style="text-align:center;padding:14px;color:var(--text-secondary);font-size:13px;">Hələ məhsul əlavə edilməyib</div>';
+      $('payment-type').value = 'Nağd';
+      orderModal.classList.add('active');
+    }
+  }
 });
 
 /* ============ NEW ORDER ============ */

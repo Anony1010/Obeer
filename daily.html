@@ -457,11 +457,23 @@ function todayStr() {
 db.ref('products').on('value', snap => {
   const val = snap.val();
   products = val ? Object.keys(val).map(k => ({ id: k, ...val[k] })).filter(p => p.active !== false).sort((a,b) => (a.order||0)-(b.order||0)) : [];
-  populateProductSelect();
+  refreshSuggestionsIfOpen();
 });
 
-function populateProductSelect() {
-  // select is no longer used — autocomplete replaces it
+function refreshSuggestionsIfOpen() {
+  const container = $('product-suggestions');
+  if (!container || container.style.display !== 'block') return;
+  const searchVal = $('product-search');
+  const q = searchVal ? searchVal.value.toLowerCase().trim() : '';
+  if (!q) { showAllProducts(); return; }
+  const matches = products.filter(function(p) { return p.title.toLowerCase().includes(q); });
+  container.style.display = matches.length ? 'block' : 'none';
+  container.innerHTML = matches.map(function(p) {
+    return '<div class="product-suggestion" data-pid="' + p.id + '" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--glass-border);display:flex;justify-content:space-between;align-items:center;transition:background .1s ease;">' +
+      '<span style="font-size:13px;color:var(--text-primary);">' + p.title + '</span>' +
+      '<span style="font-size:12px;color:var(--primary);font-weight:600;">' + (p.price || 0).toFixed(2) + ' AZN</span></div>';
+  }).join('');
+  attachSuggestionEvents();
 }
 
 /* ============ PRODUCT SEARCH (autocomplete) ============ */

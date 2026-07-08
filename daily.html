@@ -373,6 +373,7 @@ select.form-control option{ background:var(--surface-solid); color:var(--text-pr
       <button class="modal-close" data-close>&times;</button>
     </div>
     <div id="archived-content">
+      <div id="monthly-summary" style="margin-bottom:16px;"></div>
       <div class="form-group">
         <label>Tarix seçin</label>
         <select id="archive-date-select" class="form-control"></select>
@@ -587,6 +588,7 @@ function renderOrders() {
       <div class="order-total">${(o.total ?? 0).toFixed(2)} <span class="currency">AZN</span></div>
       <div class="order-payment">
         Ödəniş: <span class="badge ${o.paymentType === 'Kart' ? 'card' : 'cash'}">${icon(o.paymentType === 'Kart' ? 'card' : 'cash', 12)}${o.paymentType === 'Kart' ? 'Kart' : 'Nağd'}</span>
+        ${o.createdAt ? '<span style="font-size:11px;color:var(--text-tertiary);margin-left:8px;">🕐 ' + new Date(o.createdAt).toLocaleTimeString('az-AZ', {hour:'2-digit',minute:'2-digit'}) + '</span>' : ''}
       </div>
       ${itemsArr.length > 0 ? `<div class="order-items-preview">${escHtml(itemsText)}</div>` : ''}
     </div>`;
@@ -885,6 +887,8 @@ $('toggle-archived-btn').addEventListener('click', async () => {
     const snap = await db.ref('daily-reports').once('value');
     const val = snap.val();
     const allDates = val ? Object.keys(val).sort().reverse() : [];
+    // Build monthly summary
+    loadMonthlySummary(val);
     const sel = $('archive-date-select');
     if (!sel) return;
     sel.innerHTML = allDates.map(d => `<option value="${d}">${d}</option>`).join('');
@@ -898,6 +902,47 @@ $('toggle-archived-btn').addEventListener('click', async () => {
     toast('Arxiv yüklənərkən xəta', 'error');
   }
 });
+
+async function loadMonthlySummary(allData) {
+  const container = $('monthly-summary');
+  if (!container || !allData) return;
+  // Group by month (YYYY-MM)
+  const months = {};
+  Object.keys(allData).forEach(dateStr => {
+    const monthKey = dateStr.substring(0, 7); // "2026-07"
+    if (!months[monthKey]) months[monthKey] = { card: 0, cash: 0, tip: 0, grand: 0 };
+    const day = allData[dateStr];
+    if (day.orders) {
+      Object.values(day.orders).forEach(o => {
+        if (!o.confirmed) return;
+        if (o.paymentType === 'Kart') months[monthKey].card += o.total || 0;
+        else months[monthKey].cash += o.total || 0;
+        months[monthKey].grand += o.total || 0;
+      });
+    }
+    months[monthKey].tip += day.tip || 0;
+  });
+  const sortedMonths = Object.keys(months).sort().reverse();
+  if (sortedMonths.length === 0) { container.innerHTML = ''; return; }
+  const monthNames = {
+    '01':'Yanvar','02':'Fevral','03':'Mart','04':'Aprel','05':'May','06':'İyun',
+    '07':'İyul','08':'Avqust','09':'Sentyabr','10':'Oktyabr','11':'Noyabr','12':'Dekabr'
+  };
+  container.innerHTML = '<div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:10px;">' + icon('wallet', 14) + ' Aylıq Hesabat</div>' +
+    sortedMonths.map(mk => {
+      const m = months[mk];
+      const [yr, mo] = mk.split('-');
+      const label = monthNames[mo] ? monthNames[mo] + ' ' + yr : mk;
+      return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px;">' +
+        '<div style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:6px;">' + label + '</div>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;font-size:11px;">' +
+        '<span style="display:flex;align-items:center;gap:3px;color:var(--success);font-weight:600;">' + icon('card', 12) + 'Kart: ' + m.card.toFixed(2) + ' AZN</span>' +
+        '<span style="display:flex;align-items:center;gap:3px;color:var(--primary);font-weight:600;">' + icon('cash', 12) + 'Nağd: ' + m.cash.toFixed(2) + ' AZN</span>' +
+        '<span style="display:flex;align-items:center;gap:3px;color:#ff6b9d;font-weight:600;">' + icon('cash', 12) + 'Çayvoy: ' + m.tip.toFixed(2) + ' AZN</span>' +
+        '<span style="display:flex;align-items:center;gap:3px;color:var(--text-primary);font-weight:700;">' + icon('wallet', 12) + 'Ümumi: ' + m.grand.toFixed(2) + ' AZN</span>' +
+        '</div></div>';
+    }).join('');
+}
 
 async function loadArchiveOrders(dateStr) {
   try {
@@ -920,7 +965,8 @@ async function loadArchiveOrders(dateStr) {
       return `<div class="order-card confirmed" style="cursor:pointer;margin-bottom:8px;">
         <div class="order-header"><span class="order-number">${o.orderNumber || 'Sifariş'}</span><span class="order-status confirmed">${icon('check-circle', 12)}Təsdiqləndi</span></div>
         <div class="order-total">${(o.total || 0).toFixed(2)} <span class="currency">AZN</span></div>
-        <div class="order-payment">Ödəniş: <span class="badge ${o.paymentType === 'Kart' ? 'card' : 'cash'}">${icon(o.paymentType === 'Kart' ? 'card' : 'cash', 12)}${o.paymentType === 'Kart' ? 'Kart' : 'Nağd'}</span></div>
+        <div class="order-payment">Ödəniş: <span class="badge ${o.paymentType === 'Kart' ? 'card' : 'cash'}">${icon(o.paymentType === 'Kart' ? 'card' : 'cash', 12)}${o.paymentType === 'Kart' ? 'Kart' : 'Nağd'}</span>
+        ${o.createdAt ? '<span style="font-size:11px;color:var(--text-tertiary);margin-left:8px;">🕐 ' + new Date(o.createdAt).toLocaleTimeString('az-AZ', {hour:'2-digit',minute:'2-digit'}) + '</span>' : ''}</div>
         ${itemsArr.length > 0 ? `<div class="order-items-preview">${escHtml(itemsText)}</div>` : ''}
       </div>`;
     }).join('');

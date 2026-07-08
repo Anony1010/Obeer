@@ -379,7 +379,8 @@ select.form-control option{ background:var(--surface-solid); color:var(--text-pr
         <select id="archive-date-select" class="form-control"></select>
       </div>
       <div id="archive-orders-container"></div>
-      <button id="archive-pdf-btn" class="btn btn-secondary" style="width:100%;margin-top:12px;"><span class="ic" data-icon="pdf"></span>Arxiv Export To PDF</button>
+      <button id="archive-add-order-btn" class="btn btn-primary" style="width:100%;margin-top:10px;"><span class="ic" data-icon="plus"></span>Əlavələr et</button>
+      <button id="archive-pdf-btn" class="btn btn-secondary" style="width:100%;margin-top:8px;"><span class="ic" data-icon="pdf"></span>Arxiv Export To PDF</button>
     </div>
   </div>
 </div>
@@ -447,6 +448,7 @@ let editingOrderId = null;
 let currentDate = '';
 let initialDataLoaded = false;
 let currentTip = 0;
+let orderTargetDate = null;
 
 function todayStr() {
   const d = new Date();
@@ -653,6 +655,7 @@ document.addEventListener('keydown', e => {
 /* ============ NEW ORDER ============ */
 $('new-order-btn').addEventListener('click', () => {
   editingOrderId = null;
+  orderTargetDate = null;
   currentOrderItems = [];
   $('order-modal-title').textContent = 'Yeni Sifariş';
   $('order-items').innerHTML = '<div style="text-align:center;padding:14px;color:var(--text-secondary);font-size:13px;">Hələ məhsul əlavə edilməyib</div>';
@@ -745,7 +748,7 @@ $('confirm-order-btn').addEventListener('click', async () => {
   const paymentType = $('payment-type').value;
   const total = currentOrderItems.reduce((s, i) => s + i.quantity * i.salePrice, 0);
   try {
-    const dateStr = currentDate || todayStr();
+    const dateStr = orderTargetDate || currentDate || todayStr();
     const itemsObj = {};
     currentOrderItems.forEach((item, idx) => {
       itemsObj['item_' + idx] = {
@@ -772,6 +775,10 @@ $('confirm-order-btn').addEventListener('click', async () => {
     toast('Sifariş təsdiqləndi!');
     $('order-modal').classList.remove('active');
     currentOrderItems = [];
+    if (orderTargetDate) {
+      loadArchiveOrders(orderTargetDate);
+      orderTargetDate = null;
+    }
   } catch (e) {
     toast('Xəta: ' + e.message, 'error');
   }
@@ -780,6 +787,7 @@ $('confirm-order-btn').addEventListener('click', async () => {
 /* ============ CANCEL ============ */
 $('cancel-order-btn').addEventListener('click', () => {
   editingOrderId = null;
+  orderTargetDate = null;
   $('order-modal').classList.remove('active');
   currentOrderItems = [];
 });
@@ -991,6 +999,20 @@ async function loadArchiveOrders(dateStr) {
     toast('Məlumat yüklənərkən xəta', 'error');
   }
 }
+
+/* ============ ARCHIVE ADD ORDER ============ */
+$('archive-add-order-btn').addEventListener('click', () => {
+  const dateStr = $('archive-date-select').value;
+  if (!dateStr) return toast('Tarix seçin', 'error');
+  orderTargetDate = dateStr;
+  editingOrderId = null;
+  currentOrderItems = [];
+  $('order-modal-title').textContent = 'Yeni Sifariş — ' + dateStr;
+  $('order-items').innerHTML = '<div style="text-align:center;padding:14px;color:var(--text-secondary);font-size:13px;">Hələ məhsul əlavə edilməyib</div>';
+  $('payment-type').value = 'Nağd';
+  $('archived-modal').classList.remove('active');
+  $('order-modal').classList.add('active');
+});
 
 /* ============ PDF EXPORT ============ */
 $('pdf-export-btn').addEventListener('click', generatePDF);

@@ -1071,7 +1071,7 @@ async function makePDF(orderList, dateStr) {
         '<td style="padding:6px 10px;text-align:right;font-size:12px;font-weight:800;color:#e08a1e;border-top:2px solid #dce0e8;">' + Number(o2.total || 0).toFixed(2) + ' AZN</td></tr>';
 
       return '<div style="margin-bottom:10px;">' +
-        '<div style="font-size:13px;font-weight:700;color:#1a1d26;margin-bottom:4px;padding-bottom:3px;border-bottom:2px solid #e08a1e;">' + (o2.orderNumber || 'Sifariş ' + (idx+1)) + '</div>' +
+        '<div style="font-size:13px;font-weight:700;color:#1a1d26;margin-bottom:4px;padding-bottom:3px;border-bottom:2px solid #e08a1e;">' + (o2.orderNumber || 'Sifariş ' + (idx+1)) + (o2.createdAt ? '<span style="font-size:9px;font-weight:400;color:#9aa0b1;margin-left:10px;">🕐 ' + new Date(o2.createdAt).toLocaleTimeString('az-AZ',{hour:'2-digit',minute:'2-digit'}) + '</span>' : '') + '</div>' +
         '<table style="width:100%;border-collapse:collapse;">' +
         '<colgroup><col style="width:48%;"><col style="width:14%;"><col style="width:20%;"><col style="width:18%;"></colgroup>' +
         '<thead><tr style="background:#e08a1e;color:#fff;">' +
